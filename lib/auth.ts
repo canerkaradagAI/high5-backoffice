@@ -105,7 +105,6 @@ export const authOptions: NextAuthOptions = {
         session.user.permissions = token.permissions as any;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
-        session.user.phone = token.phone as string;
       }
       return session;
     }

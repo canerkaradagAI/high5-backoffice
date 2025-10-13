@@ -169,7 +169,8 @@ export function AddTaskModal({ isOpen, onClose, onSuccess }: AddTaskModalProps) 
       status: 'Bekliyor',
       assignedToId: '',
       customerId: '',
-      notes: ''
+      notes: '',
+      deliveryLocation: ''
     });
     setDueDate(undefined);
     onClose();

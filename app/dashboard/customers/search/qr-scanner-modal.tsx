@@ -17,7 +17,7 @@ export default function QrScannerModal({ open, onClose, onResult }: QrScannerMod
 
   const stopScanner = useCallback(async () => {
     try {
-      if (scannerRef.current && (await scannerRef.current.isScanning())) {
+      if (scannerRef.current && scannerRef.current.isScanning) {
         await scannerRef.current.stop();
       }
     } catch {}

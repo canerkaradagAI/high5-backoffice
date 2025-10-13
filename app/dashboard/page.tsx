@@ -105,35 +105,6 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Admin Panel */}
-      {!showOverview && roleName === 'Admin' && (
-        <div className="space-y-4">
-          {/* Admin Panel */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="px-5 pt-4 pb-2 text-sm font-semibold text-gray-800">Admin Panel</div>
-            <div className="p-5 pt-3 space-y-3">
-              <a href="/dashboard/parameters" className="block bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                  <Settings className="h-4 w-4 text-gray-600" /> Parametre
-                </div>
-                <div className="text-xs text-gray-600 mt-1">Sistem parametrelerini yönet</div>
-              </a>
-              <a href="/dashboard/roles" className="block bg-red-50 hover:bg-red-100 border border-red-100 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                  <Shield className="h-4 w-4 text-red-600" /> Roller & İzinler
-                </div>
-                <div className="text-xs text-gray-600 mt-1">Kullanıcı rolleri ve izinleri yönet</div>
-              </a>
-              <a href="/dashboard/reports" className="block bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                  <BarChart3 className="h-4 w-4 text-emerald-600" /> Raporlar
-                </div>
-                <div className="text-xs text-gray-600 mt-1">Sistem raporları ve analizler</div>
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Sales Consultant: Grouped actions (mobile-like) */}
       {!showOverview && roleName === 'Satış Danışmanı' && (

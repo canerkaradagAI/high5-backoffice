@@ -31,6 +31,8 @@ interface Task {
   dueDate: string | null;
   completedAt: string | null;
   notes: string | null;
+  deliveryLocation: string | null;
+  targetRole: string | null;
   createdAt: string;
   updatedAt: string;
   assignedTo?: {

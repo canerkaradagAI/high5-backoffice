@@ -52,14 +52,14 @@ export async function GET(request: NextRequest) {
     // Sepetteki ürünlerin kategorilerini ve markalarını al
     const cartProducts = await prisma.product.findMany({
       where: {
-        sku: { in: cartItems.map(item => item.sku).filter(Boolean) }
+        sku: { in: cartItems.map(item => item.sku).filter((sku): sku is string => Boolean(sku)) }
       },
       select: { category: true, brand: true, color: true }
     });
 
-    const categories = [...new Set(cartProducts.map(p => p.category).filter(Boolean))];
-    const brands = [...new Set(cartProducts.map(p => p.brand).filter(Boolean))];
-    const colors = [...new Set(cartProducts.map(p => p.color).filter(Boolean))];
+    const categories = [...new Set(cartProducts.map(p => p.category).filter((cat): cat is string => Boolean(cat)))];
+    const brands = [...new Set(cartProducts.map(p => p.brand).filter((brand): brand is string => Boolean(brand)))];
+    const colors = [...new Set(cartProducts.map(p => p.color).filter((color): color is string => Boolean(color)))];
 
     // Öneriler algoritması
     let recommendations = [];
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         where: {
           brand: 'Skechers',
           isActive: true,
-          sku: { notIn: cartItems.map(item => item.sku).filter(Boolean) }
+          sku: { notIn: cartItems.map(item => item.sku).filter((sku): sku is string => Boolean(sku)) }
         },
         take: Math.ceil(limit / 2),
         orderBy: { createdAt: 'desc' },
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
           category: { in: categories },
           brand: 'Skechers',
           isActive: true,
-          sku: { notIn: cartItems.map(item => item.sku).filter(Boolean) }
+          sku: { notIn: cartItems.map(item => item.sku).filter((sku): sku is string => Boolean(sku)) }
         },
         take: Math.ceil(limit / 2),
         orderBy: { createdAt: 'desc' },
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
         where: {
           brand: 'Skechers',
           isActive: true,
-          sku: { notIn: cartItems.map(item => item.sku).filter(Boolean) }
+          sku: { notIn: cartItems.map(item => item.sku).filter((sku): sku is string => Boolean(sku)) }
         },
         take: limit - recommendations.length,
         orderBy: { createdAt: 'desc' },

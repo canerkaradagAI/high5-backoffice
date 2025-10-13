@@ -23,7 +23,7 @@ import {
 interface Permission {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
 }
 
 export default function DashboardLayout({

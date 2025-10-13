@@ -21,6 +21,25 @@ import {
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
+// Bekleme süresini hesaplayan fonksiyon
+function calculateWaitingTime(createdAt: string, status: string): string {
+  if (status === 'Tamamlandı') return 'Tamamlandı';
+  
+  const created = new Date(createdAt);
+  const now = new Date();
+  const diffMinutes = Math.floor((now.getTime() - created.getTime()) / (1000 * 60));
+  
+  if (diffMinutes < 60) {
+    return `${diffMinutes} dk`;
+  } else if (diffMinutes < 1440) {
+    const hours = Math.floor(diffMinutes / 60);
+    return `${hours} saat`;
+  } else {
+    const days = Math.floor(diffMinutes / 1440);
+    return `${days} gün`;
+  }
+}
+
 interface Task {
   id: string;
   title: string;
@@ -295,7 +314,7 @@ export function MyTasksList({
                     <div className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       <span className="text-red-600 font-medium">
-                        {calculateWaitingTime(task.createdAt, task.status, task.completedAt)}
+                        {calculateWaitingTime(task.createdAt, task.status)}
                       </span>
                     </div>
                     
