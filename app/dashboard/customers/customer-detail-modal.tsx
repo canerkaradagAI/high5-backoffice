@@ -14,8 +14,12 @@ import {
   Calendar,
   FileText,
   Star,
-  TrendingUp
+  TrendingUp,
+  Eye,
+  EyeOff
 } from 'lucide-react';
+import { getKVKKCompliantData } from '@/lib/kvkk-utils';
+import { useSession } from 'next-auth/react';
 
 interface CustomerDetailModalProps {
   customer: any;
@@ -23,9 +27,11 @@ interface CustomerDetailModalProps {
 }
 
 export default function CustomerDetailModal({ customer, onClose }: CustomerDetailModalProps) {
+  const { data: session } = useSession();
   const [localCustomer, setLocalCustomer] = useState<any>(customer);
   const [openEdit, setOpenEdit] = useState(false);
   const [sales, setSales] = useState<any[]>(customer.sales ?? []);
+  const [showFullData, setShowFullData] = useState(false);
   const totalSpent = (sales && sales.length > 0)
     ? sales.reduce((sum: number, s: any) => sum + Number(s.amount || 0), 0)
     : Number(customer.totalSpent || 0);
@@ -39,15 +45,34 @@ export default function CustomerDetailModal({ customer, onClose }: CustomerDetai
     .filter(Boolean)
     .join(' ');
 
+  // KVKK uyumlu veri gösterimi
+  const kvkkData = getKVKKCompliantData(
+    {
+      phone: localCustomer.phone,
+      email: localCustomer.email,
+      address: fullAddressString,
+      tcNumber: localCustomer.tcNumber,
+      firstName: localCustomer.firstName,
+      lastName: localCustomer.lastName
+    },
+    (session?.user as any)?.role,
+    showFullData
+  );
+
   useEffect(() => {
-    if (!customer?.sales) {
-      fetch(`/api/customers/${customer.id}/sales`).then(async (res) => {
-        if (res.ok) {
-          const data = await res.json();
-          setSales(data);
-        }
-      }).catch(() => {});
+    let aborted = false;
+    async function loadSales() {
+      try {
+        const res = await fetch(`/api/customers/${customer.id}/sales`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!aborted) setSales(Array.isArray(data) ? data : []);
+      } catch {
+        // ignore
+      }
     }
+    loadSales();
+    return () => { aborted = true; };
   }, [customer?.id]);
   const getSegmentColor = (segment: string) => {
     switch (segment) {
@@ -122,7 +147,7 @@ export default function CustomerDetailModal({ customer, onClose }: CustomerDetai
               </h3>
               <button
                 onClick={() => setOpenEdit(true)}
-                className="px-3 py-1 text-sm rounded-md bg-purple-600 text-white hover:bg-purple-700"
+                className="px-3 py-1 text-sm rounded-md bg-purple-200 text-purple-800 hover:bg-purple-300 transition-colors"
               >
                 Düzenle
               </button>
@@ -130,17 +155,53 @@ export default function CustomerDetailModal({ customer, onClose }: CustomerDetai
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <Phone className="h-4 w-4 text-gray-400 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-700">Telefon Numarası</p>
-                  <p className="text-gray-900">{localCustomer.phone || 'Belirtilmemiş'}</p>
+                  <p className="text-gray-900">{kvkkData.phone}</p>
                 </div>
+                {!showFullData && (session?.user as any)?.role !== 'MANAGER' && (
+                  <button
+                    onClick={() => setShowFullData(true)}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Tam veriyi göster"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                )}
+                {showFullData && (
+                  <button
+                    onClick={() => setShowFullData(false)}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Veriyi maskele"
+                  >
+                    <EyeOff className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <Mail className="h-4 w-4 text-gray-400 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-700">Mail Adresi</p>
-                  <p className="text-gray-900">{localCustomer.email || 'Belirtilmemiş'}</p>
+                  <p className="text-gray-900">{kvkkData.email}</p>
                 </div>
+                {!showFullData && (session?.user as any)?.role !== 'MANAGER' && (
+                  <button
+                    onClick={() => setShowFullData(true)}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Tam veriyi göster"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                )}
+                {showFullData && (
+                  <button
+                    onClick={() => setShowFullData(false)}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Veriyi maskele"
+                  >
+                    <EyeOff className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
@@ -151,10 +212,28 @@ export default function CustomerDetailModal({ customer, onClose }: CustomerDetai
               </div>
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 md:col-span-2">
                 <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-700">Açık Adres</p>
-                  <p className="text-gray-900">{fullAddressString || 'Belirtilmemiş'}</p>
+                  <p className="text-gray-900">{kvkkData.address}</p>
                 </div>
+                {!showFullData && (session?.user as any)?.role !== 'MANAGER' && (
+                  <button
+                    onClick={() => setShowFullData(true)}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Tam veriyi göster"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                )}
+                {showFullData && (
+                  <button
+                    onClick={() => setShowFullData(false)}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    title="Veriyi maskele"
+                  >
+                    <EyeOff className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -261,12 +340,12 @@ export default function CustomerDetailModal({ customer, onClose }: CustomerDetai
                     {/* Ürün Görseli */}
                     <div className="w-16 h-16 bg-white rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0">
                       <img 
-                        src={purchase.imageUrl || '/images/skechers-placeholder.jpg'} 
+                        src={`${purchase.imageUrl || '/placeholder-product.svg'}?v=${Date.now()}&cache=${Math.random()}&force=${Math.random()}`} 
                         alt="Skechers Ayakkabı"
                         className="w-12 h-12 object-cover rounded"
                         onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          (e.currentTarget.nextElementSibling as HTMLElement)?.classList.remove('hidden');
                         }}
                       />
                       <div className="hidden w-12 h-12 bg-gray-200 rounded flex items-center justify-center">

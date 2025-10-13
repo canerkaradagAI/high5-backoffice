@@ -47,6 +47,13 @@ const taskTypes = [
   'Diğer'
 ];
 
+const deliveryLocations = [
+  'SD Teslim',
+  'Pick Up Alanı',
+  'Deneme Kabini',
+  'Kasa'
+];
+
 export function AddTaskModal({ isOpen, onClose, onSuccess }: AddTaskModalProps) {
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -63,7 +70,8 @@ export function AddTaskModal({ isOpen, onClose, onSuccess }: AddTaskModalProps) 
     status: 'Bekliyor',
     assignedToId: '',
     customerId: '',
-    notes: ''
+    notes: '',
+    deliveryLocation: ''
   });
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
@@ -292,6 +300,23 @@ export function AddTaskModal({ isOpen, onClose, onSuccess }: AddTaskModalProps) 
                   {customers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.fullName} - {customer.phone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="deliveryLocation">Teslim Lokasyonu</Label>
+              <Select value={formData.deliveryLocation} onValueChange={(value) => setFormData(prev => ({ ...prev, deliveryLocation: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Teslim lokasyonu seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Teslim Lokasyonu Seçme</SelectItem>
+                  {deliveryLocations.map((location) => (
+                    <SelectItem key={location} value={location}>
+                      {location}
                     </SelectItem>
                   ))}
                 </SelectContent>

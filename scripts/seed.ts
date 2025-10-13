@@ -270,7 +270,7 @@ async function main() {
       lastName: 'Çelik',
       fullName: 'Zehra Çelik',
       phone: '5559876545',
-      segment: 'Regular',
+      segment: 'Aday',
       totalSpent: 800,
       totalOrders: 3,
       city: 'İzmir'
@@ -283,6 +283,51 @@ async function main() {
       segment: 'VIP',
       totalSpent: 10000,
       totalOrders: 25,
+      city: 'İstanbul'
+    },
+    // Eski müşterileriniz
+    {
+      firstName: 'Emre',
+      lastName: 'Keloğlu',
+      fullName: 'Emre Keloğlu',
+      phone: '5551234567',
+      email: 'emre@email.com',
+      segment: 'Premium',
+      totalSpent: 3500,
+      totalOrders: 12,
+      city: 'İstanbul'
+    },
+    {
+      firstName: 'Metin',
+      lastName: 'Özcan',
+      fullName: 'Metin Özcan',
+      phone: '5551234568',
+      email: 'metin@email.com',
+      segment: 'Classic',
+      totalSpent: 1800,
+      totalOrders: 6,
+      city: 'Ankara'
+    },
+    {
+      firstName: 'Efe',
+      lastName: 'Gözener',
+      fullName: 'Efe Gözener',
+      phone: '5551234569',
+      email: 'efe@email.com',
+      segment: 'VIP',
+      totalSpent: 7500,
+      totalOrders: 20,
+      city: 'İzmir'
+    },
+    {
+      firstName: 'Caner',
+      lastName: 'KARADAĞ',
+      fullName: 'Caner KARADAĞ',
+      phone: '5551234570',
+      email: 'caner@email.com',
+      segment: 'Premium',
+      totalSpent: 4200,
+      totalOrders: 14,
       city: 'İstanbul'
     }
   ];

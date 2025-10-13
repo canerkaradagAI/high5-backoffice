@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '../../lib/db';
-import { Users, Search, UserPlus, ClipboardPlus, ListChecks, Inbox, Plus, ClipboardList, Settings, Shield, BarChart3 } from 'lucide-react';
+import { Users, Search, UserPlus, ClipboardPlus, ListChecks, Inbox, Plus, ClipboardList, Settings, Shield, BarChart3, Package } from 'lucide-react';
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -74,6 +74,12 @@ export default async function DashboardPage() {
                   <Search className="h-4 w-4 text-indigo-600" /> Müşteri Arama
                 </div>
                 <div className="text-xs text-gray-600 mt-1">İsim, telefon veya e-posta ile ara</div>
+              </a>
+              <a href="/dashboard/product-search" className="block bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                  <Package className="h-4 w-4 text-orange-600" /> Ürün Sorgulama
+                </div>
+                <div className="text-xs text-gray-600 mt-1">Barkod okutarak ürün bilgilerini sorgula</div>
               </a>
             </div>
           </div>
@@ -148,7 +154,12 @@ export default async function DashboardPage() {
                 </div>
                 <div className="text-xs text-gray-600 mt-1">İsim, telefon veya e-posta ile ara</div>
               </a>
-              {/* Yeni Müşteri kartı kaldırıldı */}
+              <a href="/dashboard/product-search" className="block bg-orange-50 hover:bg-orange-100 border border-orange-100 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                  <Package className="h-4 w-4 text-orange-600" /> Ürün Sorgulama
+                </div>
+                <div className="text-xs text-gray-600 mt-1">Barkod okutarak ürün bilgilerini sorgula</div>
+              </a>
             </div>
           </div>
 
@@ -191,7 +202,7 @@ export default async function DashboardPage() {
             Hoş geldiniz, {session?.user?.firstName}!
           </h1>
           <p className="text-gray-600 text-sm md:text-base">
-            OLKA premium mağaza yönetim sisteminize hoş geldiniz. 
+            High5 premium mağazacılık yönetim sisteminize hoş geldiniz. 
             <br className="md:hidden" />
             <span className="block md:inline mt-1 md:mt-0">
               Rol: <span className="font-medium text-blue-600">{roleName}</span>

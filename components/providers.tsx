@@ -4,23 +4,12 @@
 import { SessionProvider } from 'next-auth/react';
 import { ThemeProvider } from './theme-provider';
 import { Toaster } from 'react-hot-toast';
-import { useEffect, useState } from 'react';
 
 interface ProvidersProps {
   children: React.ReactNode;
 }
 
 export default function Providers({ children }: ProvidersProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
   return (
     <SessionProvider>
       <ThemeProvider

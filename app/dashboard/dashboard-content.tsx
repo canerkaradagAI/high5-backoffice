@@ -158,13 +158,9 @@ export default function DashboardContent({ session }: DashboardContentProps) {
             </button>
             
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 olka-bg-blue rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 7v10c0 5.55 3.84 9.739 8.9 9.99.34.02.67.01 1.1.01s.76.01 1.1-.01C18.16 26.739 22 22.55 22 17V7l-10-5z"/>
-                </svg>
-              </div>
+              <img src="/logo/high5.svg" alt="High5" className="h-8 w-auto" />
               <div>
-                <h1 className="text-xl font-bold olka-text-blue">OLKA</h1>
+                <h1 className="text-xl font-bold olka-text-blue">High5</h1>
                 <p className="text-xs text-gray-500 -mt-1">Backoffice</p>
               </div>
             </div>
@@ -260,7 +256,7 @@ export default function DashboardContent({ session }: DashboardContentProps) {
               Hoş geldiniz, {session?.user?.firstName}!
             </h1>
             <p className="text-gray-600 text-sm md:text-base">
-              OLKA premium mağaza yönetim sisteminize hoş geldiniz. 
+              High5 premium mağazacılık yönetim sisteminize hoş geldiniz. 
               <br className="md:hidden" />
               <span className="block md:inline mt-1 md:mt-0">
                 Rol: <span className="font-medium olka-text-blue">{primaryRole}</span>

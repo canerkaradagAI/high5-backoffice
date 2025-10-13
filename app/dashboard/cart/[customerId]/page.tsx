@@ -10,9 +10,13 @@ import {
   Trash2, 
   ShoppingCart,
   CreditCard,
-  Barcode
+  Barcode,
+  Star,
+  TrendingUp
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getKVKKCompliantData } from '@/lib/kvkk-utils';
+import SaleActionModal from '../../../components/sale-action-modal';
 
 interface CartItem {
   id: string;
@@ -42,6 +46,19 @@ interface Customer {
   phone: string;
 }
 
+interface Recommendation {
+  id: string;
+  sku: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  price: number;
+  category?: string;
+  brand?: string;
+  color?: string;
+  size?: string;
+}
+
 export default function CartPage() {
   const params = useParams();
   const router = useRouter();
@@ -54,6 +71,9 @@ export default function CartPage() {
   const [barcodeInput, setBarcodeInput] = useState('');
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [showBarcodeInput, setShowBarcodeInput] = useState(false);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [showSaleModal, setShowSaleModal] = useState(false);
 
   useEffect(() => {
     if (customerId) {
@@ -61,6 +81,14 @@ export default function CartPage() {
       fetchCustomer();
     }
   }, [customerId]);
+
+  useEffect(() => {
+    if (cart && cart.items.length > 0) {
+      fetchRecommendations();
+    } else {
+      setRecommendations([]);
+    }
+  }, [cart]);
 
   const fetchCart = async () => {
     try {
@@ -95,6 +123,25 @@ export default function CartPage() {
     }
   };
 
+  const fetchRecommendations = async () => {
+    if (!cart || cart.items.length === 0) return;
+    
+    setLoadingRecommendations(true);
+    try {
+      const cartItemIds = cart.items.map(item => item.id).join(',');
+      const response = await fetch(`/api/products/recommendations?cartItemIds=${cartItemIds}&limit=6`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setRecommendations(data.recommendations || []);
+      }
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
   const handleAddProduct = async () => {
     if (!barcodeInput.trim()) {
       toast.error('Barkod giriniz');
@@ -103,32 +150,19 @@ export default function CartPage() {
 
     setIsAddingProduct(true);
     try {
-      // Mock ürün verileri - gerçek API çalışana kadar
-      const mockProducts = {
-        '8801234567890': {
-          sku: '8801234567890',
-          name: 'Skechers D\'Lites - Summer Fiesta',
-          description: 'Konforlu ve şık günlük ayakkabı. Hafif yapısı ve nefes alabilen malzemesi ile gün boyu rahatlık sağlar.',
-          imageUrl: 'https://images.skechers.com/img/products/8801234567890_1.jpg',
-          price: 1861.00
-        },
-        '8801234567891': {
-          sku: '8801234567891',
-          name: 'Skechers Go Walk 5 - Comfort',
-          description: 'Yürüyüş için özel tasarlanmış konforlu ayakkabı. 5GEN teknolojisi ile maksimum destek.',
-          imageUrl: 'https://images.skechers.com/img/products/8801234567891_1.jpg',
-          price: 1299.00
-        },
-        '8801234567892': {
-          sku: '8801234567892',
-          name: 'Skechers Flex Appeal 3.0',
-          description: 'Spor ve günlük kullanım için ideal. Esnek taban yapısı ile doğal yürüyüş.',
-          imageUrl: 'https://images.skechers.com/img/products/8801234567892_1.jpg',
-          price: 1599.00
-        }
-      };
+      // Gerçek ürün API'sini kullan
+      console.log('🔍 Barkod aranıyor:', barcodeInput.trim());
+      const productResponse = await fetch(`/api/products/search?sku=${barcodeInput.trim()}`);
+      
+      console.log('📡 API Response:', productResponse.status, productResponse.ok);
+      
+      if (!productResponse.ok) {
+        toast.error('Ürün bulunamadı');
+        return;
+      }
 
-      const product = mockProducts[barcodeInput.trim()];
+      const product = await productResponse.json();
+      console.log('📦 Bulunan ürün:', product);
       
       if (product) {
         // Ürün bulundu, sepete ekle
@@ -140,6 +174,8 @@ export default function CartPage() {
           body: JSON.stringify({
             sku: product.sku,
             title: product.name,
+            description: product.description,
+            imageUrl: product.imageUrl,
             quantity: 1,
             unitPrice: product.price
           }),
@@ -164,6 +200,8 @@ export default function CartPage() {
           body: JSON.stringify({
             sku: barcodeInput.trim(),
             title: `Ürün ${barcodeInput.trim()}`,
+            description: 'Manuel eklenen ürün',
+            imageUrl: null,
             quantity: 1,
             unitPrice: 100.00 // Varsayılan fiyat
           }),
@@ -246,8 +284,38 @@ export default function CartPage() {
     }
   };
 
+  const handleAddRecommendation = async (recommendation: Recommendation) => {
+    try {
+      const response = await fetch(`/api/carts/${customerId}/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sku: recommendation.sku,
+          title: recommendation.name,
+          description: recommendation.description,
+          imageUrl: recommendation.imageUrl,
+          quantity: 1,
+          unitPrice: recommendation.price
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(`${recommendation.name} sepete eklendi`);
+        fetchCart(); // Sepeti yenile
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Ürün eklenemedi');
+      }
+    } catch (error) {
+      console.error('Error adding recommendation:', error);
+      toast.error('Ürün eklenirken hata oluştu');
+    }
+  };
+
   const handleCheckout = () => {
-    router.push(`/dashboard/cart/${customerId}/checkout`);
+    setShowSaleModal(true);
   };
 
   if (loading) {
@@ -282,7 +350,10 @@ export default function CartPage() {
                     {customer ? `${customer.firstName} ${customer.lastName}` : 'Müşteri'} - Sepet
                   </h1>
                   <p className="text-sm text-gray-500">
-                    {customer?.phone}
+                    {customer ? getKVKKCompliantData(
+                      { phone: customer.phone },
+                      (session?.user as any)?.role
+                    ).phone : ''}
                   </p>
                 </div>
               </div>
@@ -386,7 +457,10 @@ export default function CartPage() {
                   {customer ? `${customer.firstName} ${customer.lastName}` : 'Müşteri'} - Sepet
                 </h1>
                 <p className="text-sm text-gray-500">
-                  {customer?.phone}
+                  {customer ? getKVKKCompliantData(
+                    { phone: customer.phone },
+                    (session?.user as any)?.role
+                  ).phone : ''}
                 </p>
               </div>
             </div>
@@ -484,23 +558,43 @@ export default function CartPage() {
                   {cart.items.map((item) => (
                     <div key={item.id} className="p-6">
                       <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">
-                            {item.title}
-                          </h3>
-                          {item.sku && (
-                            <p className="text-sm text-gray-500">
-                              SKU: {item.sku}
-                            </p>
-                          )}
-                          {item.description && (
+                        <div className="flex items-center gap-4 flex-1">
+                          {/* Ürün Görseli */}
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                            {item.imageUrl ? (
+                              <img 
+                                src={`${item.imageUrl}?v=${Date.now()}&cache=${Math.random()}&force=${Math.random()}`} 
+                                alt={item.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/placeholder-product.svg';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <ShoppingCart className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900">
+                              {item.title}
+                            </h3>
+                            {item.sku && (
+                              <p className="text-sm text-gray-500">
+                                SKU: {item.sku}
+                              </p>
+                            )}
+                            {item.description && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                {item.description}
+                              </p>
+                            )}
                             <p className="text-sm text-gray-600 mt-1">
-                              {item.description}
+                              ₺{item.unitPrice.toLocaleString('tr-TR')} / adet
                             </p>
-                          )}
-                          <p className="text-sm text-gray-600 mt-1">
-                            ₺{item.unitPrice.toLocaleString('tr-TR')} / adet
-                          </p>
+                          </div>
                         </div>
                         
                         <div className="flex items-center gap-4">
@@ -543,7 +637,120 @@ export default function CartPage() {
             </div>
           </div>
         </div>
+
+        {/* Öneriler Bölümü */}
+        {cart && cart.items.length > 0 && (
+          <div className="mt-8">
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="px-6 py-4 border-b">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Size Önerilen Ürünler
+                  </h2>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Sepetinizdeki ürünlere benzer öneriler
+                </p>
+              </div>
+              
+              {loadingRecommendations ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-500">Öneriler yükleniyor...</p>
+                </div>
+              ) : recommendations.length > 0 ? (
+                <div className="p-6">
+                  {/* Horizontal Scroll Container */}
+                  <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#CBD5E1 #F1F5F9' }}>
+                    {recommendations.map((recommendation) => (
+                      <div
+                        key={recommendation.id}
+                        className="flex-shrink-0 w-48 border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer group"
+                        onClick={() => handleAddRecommendation(recommendation)}
+                      >
+                        {/* Ürün Görseli - Küçük */}
+                        <div className="w-full h-20 bg-gray-100 rounded-lg overflow-hidden mb-2">
+                          {recommendation.imageUrl ? (
+                            <img 
+                              src={`${recommendation.imageUrl}?v=${Date.now()}&cache=${Math.random()}&force=${Math.random()}`} 
+                              alt={recommendation.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-product.svg';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                              <ShoppingCart className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Ürün Bilgileri */}
+                        <div className="space-y-1">
+                          <h3 className="font-medium text-gray-900 text-xs line-clamp-2 group-hover:text-blue-600">
+                            {recommendation.name}
+                          </h3>
+                          
+                          {recommendation.brand && (
+                            <div className="flex items-center gap-1">
+                              {recommendation.brand === 'Skechers' ? (
+                                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                                  SKECHERS
+                                </span>
+                              ) : (
+                                <p className="text-xs text-gray-500">
+                                  {recommendation.brand}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-green-600 text-sm">
+                              ₺{recommendation.price.toLocaleString('tr-TR')}
+                            </p>
+                            <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-blue-600 text-white rounded-full hover:bg-blue-700">
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      💡 <strong>İpucu:</strong> Önerilen ürünlere tıklayarak sepete ekleyebilirsiniz • Sağa-sola kaydırarak daha fazla ürün görün
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 font-medium">Henüz öneri yok</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Sepetinize daha fazla ürün ekleyerek önerileri görün
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Satış İşlemi Popup */}
+      {cart && (
+        <SaleActionModal
+          isOpen={showSaleModal}
+          onClose={() => setShowSaleModal(false)}
+          customerId={customerId}
+          customerName={customer ? `${customer.firstName} ${customer.lastName}` : undefined}
+          totalAmount={cart.totalAmount}
+          cartItemsCount={cart.items.length}
+        />
+      )}
     </div>
   );
 }

@@ -72,7 +72,7 @@ export default function LoginForm() {
             value={formData.email}
             onChange={handleInputChange}
             className="form-input relative z-0 pl-4 pr-4"
-            placeholder="ornek@olka.com"
+            placeholder="ornek@high5.com"
             disabled={isLoading}
           />
         </div>

@@ -2,14 +2,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+// Dialog component'i kaldırıldı, custom modal kullanılacak
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea component'i kaldırıldı, custom scroll kullanılacak
 import toast from 'react-hot-toast';
 
 interface Role {
@@ -146,15 +146,25 @@ export function EditRoleModal({ role, isOpen, onClose, onSuccess }: EditRoleModa
 
   if (!role) return null;
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Rolü Düzenle</DialogTitle>
-          <DialogDescription>
-            Rol detaylarını ve izinlerini güncelleyin.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50" 
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        <div className="p-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Rolü Düzenle</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Rol detaylarını ve izinlerini güncelleyin.
+            </p>
+          </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 overflow-hidden">
           <div className="grid grid-cols-1 gap-4">
@@ -212,7 +222,7 @@ export function EditRoleModal({ role, isOpen, onClose, onSuccess }: EditRoleModa
               </p>
             </CardHeader>
             <CardContent className="max-h-64">
-              <ScrollArea className="h-full">
+              <div className="max-h-60 overflow-y-auto">
                 {permissionsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -243,7 +253,7 @@ export function EditRoleModal({ role, isOpen, onClose, onSuccess }: EditRoleModa
                     ))}
                   </div>
                 )}
-              </ScrollArea>
+              </div>
             </CardContent>
           </Card>
 
@@ -256,7 +266,8 @@ export function EditRoleModal({ role, isOpen, onClose, onSuccess }: EditRoleModa
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -4,13 +4,18 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { 
   User,
   Calendar,
   Clock,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2
+  CheckCircle2,
+  MapPin,
+  Package,
+  Scan
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -25,6 +30,8 @@ interface Task {
   status: string;
   dueDate?: string;
   createdAt: string;
+  deliveryLocation?: string;
+  productCode?: string;
   customer?: {
     fullName: string;
     phone: string;
@@ -103,6 +110,32 @@ export function TaskPoolList({
     }
   };
 
+  const calculateWaitingTime = (createdAt: string, status: string, completedAt?: string | null) => {
+    try {
+      const created = new Date(createdAt);
+      const now = new Date();
+      
+      // Eğer görev tamamlandıysa, tamamlanma zamanına göre hesapla
+      // Değilse şu anki zamana göre hesapla
+      const endTime = (status === 'Tamamlandı' && completedAt) ? new Date(completedAt) : now;
+      const diffMinutes = Math.floor((endTime.getTime() - created.getTime()) / (1000 * 60));
+      
+      if (diffMinutes < 60) {
+        return `${diffMinutes} dakika`;
+      } else if (diffMinutes < 1440) { // 24 saat
+        const hours = Math.floor(diffMinutes / 60);
+        const minutes = diffMinutes % 60;
+        return `${hours} saat ${minutes} dakika`;
+      } else {
+        const days = Math.floor(diffMinutes / 1440);
+        const hours = Math.floor((diffMinutes % 1440) / 60);
+        return `${days} gün ${hours} saat`;
+      }
+    } catch {
+      return '-';
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -158,32 +191,64 @@ export function TaskPoolList({
                     <p className="text-sm text-gray-600 mb-2 line-clamp-2">{task.description}</p>
                   )}
                   
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                    {task.customer && (
+                  <div className="space-y-1 text-xs text-gray-500">
+                    {/* Runner/Satış Danışmanı */}
+                    <div className="flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      <span className="text-gray-400">Atanmamış</span>
+                    </div>
+                    
+                    {/* Ürün Kodu - Sadece Ürün Getir görevlerinde göster */}
+                    {task.productCode && (task.type === 'customer_product_delivery' || task.type === 'customer_cabin_delivery') && (
                       <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        <span>{task.customer.fullName}</span>
+                        <Package className="w-3 h-3 text-green-600" />
+                        <span className="text-green-600 font-medium">
+                          Ürün: {task.productCode}
+                        </span>
                       </div>
                     )}
                     
+                    {/* Teslim Lokasyonu */}
+                    {task.deliveryLocation && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-blue-600" />
+                        <span className="text-blue-600 font-medium">
+                          {task.deliveryLocation}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Bekleme Süresi */}
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span className="text-red-600 font-medium">
+                        {calculateWaitingTime(task.createdAt, task.status, task.completedAt)}
+                      </span>
+                    </div>
+                    
+                    {/* Müşteri */}
+                    {task.customer && (
+                      <div className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        <span>Müşteri: {task.customer.fullName}</span>
+                      </div>
+                    )}
+                    
+                    {/* Oluşturan */}
+                    {task.createdBy && (
+                      <div className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        <span className="text-blue-600 font-medium">
+                          Oluşturan: {`${(task.createdBy.firstName || '').trim()} ${(task.createdBy.lastName || '').trim()}`.trim() || 'Bilinmiyor'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Bitiş Tarihi */}
                     {task.dueDate && (
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         <span>Bitiş: {formatDueDate(task.dueDate)}</span>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>Oluşturulma: {formatDate(task.createdAt)}</span>
-                    </div>
-
-                    {task.createdBy && (
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">Oluşturan:</span>
-                        <span>
-                          {`${(task.createdBy.firstName || '').trim()} ${(task.createdBy.lastName || '').trim()}`.trim() || 'Bilinmiyor'}
-                        </span>
                       </div>
                     )}
                   </div>

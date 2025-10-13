@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// Select component'i kaldırıldı, custom dropdown kullanılacak
 import { Badge } from '@/components/ui/badge';
 import { 
   Plus, 
@@ -58,6 +58,8 @@ export default function ParametersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -214,33 +216,89 @@ export default function ParametersPage() {
               />
             </div>
 
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Kategori seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Kategoriler</SelectItem>
-                {PARAMETER_CATEGORIES.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCategoryDropdown(!showCategoryDropdown);
+                  setShowTypeDropdown(false);
+                }}
+                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {categoryFilter === 'all' ? 'Tüm Kategoriler' : PARAMETER_CATEGORIES.find(c => c.value === categoryFilter)?.label || 'Kategori seçin'}
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2">▼</span>
+              </button>
+              
+              {showCategoryDropdown && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryFilter('all');
+                      setShowCategoryDropdown(false);
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-gray-100"
+                  >
+                    Tüm Kategoriler
+                  </button>
+                  {PARAMETER_CATEGORIES.map((category) => (
+                    <button
+                      key={category.value}
+                      type="button"
+                      onClick={() => {
+                        setCategoryFilter(category.value);
+                        setShowCategoryDropdown(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-gray-100"
+                    >
+                      {category.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tür seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Türler</SelectItem>
-                {PARAMETER_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTypeDropdown(!showTypeDropdown);
+                  setShowCategoryDropdown(false);
+                }}
+                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {typeFilter === 'all' ? 'Tüm Türler' : PARAMETER_TYPES.find(t => t.value === typeFilter)?.label || 'Tür seçin'}
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2">▼</span>
+              </button>
+              
+              {showTypeDropdown && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTypeFilter('all');
+                      setShowTypeDropdown(false);
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-gray-100"
+                  >
+                    Tüm Türler
+                  </button>
+                  {PARAMETER_TYPES.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => {
+                        setTypeFilter(type.value);
+                        setShowTypeDropdown(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-gray-100"
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

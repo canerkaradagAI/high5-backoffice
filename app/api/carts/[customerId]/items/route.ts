@@ -99,6 +99,8 @@ export async function POST(
           cartId: cart.id,
           sku: sku || null,
           title: title.trim(),
+          description: description || null,
+          imageUrl: imageUrl || null,
           quantity,
           unitPrice
         }

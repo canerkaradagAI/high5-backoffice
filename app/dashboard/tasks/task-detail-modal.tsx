@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { getKVKKCompliantData } from '@/lib/kvkk-utils';
+import { useSession } from 'next-auth/react';
 
 interface Task {
   id: string;
@@ -68,6 +70,7 @@ export function TaskDetailModal({
   getStatusColor,
   getPriorityColor 
 }: TaskDetailModalProps) {
+  const { data: session } = useSession();
   
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -235,7 +238,10 @@ export function TaskDetailModal({
                   <div className="font-medium">{task.customer.fullName}</div>
                   <div className="text-sm text-gray-500 flex items-center gap-1">
                     <Phone className="w-3 h-3" />
-                    {task.customer.phone}
+                    {getKVKKCompliantData(
+                      { phone: task.customer.phone },
+                      (session?.user as any)?.role
+                    ).phone}
                   </div>
                 </div>
               </div>

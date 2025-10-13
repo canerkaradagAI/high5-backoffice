@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, UserPlus, ArrowLeft, UserCheck } from 'lucide-react';
+import { Search, UserPlus, ArrowLeft, UserCheck, QrCode } from 'lucide-react';
 import AddCustomerModal from '../add-customer-modal';
 import CustomerDetailModal from '../customer-detail-modal';
 import toast from 'react-hot-toast';
+import QrScannerModal from './qr-scanner-modal';
 
 interface Customer {
   id: string;
@@ -27,6 +28,7 @@ export default function CustomerSearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [showQr, setShowQr] = useState(false);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -102,8 +104,14 @@ export default function CustomerSearchPage() {
         </button>
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowQr(true)}
+            className="px-4 py-2 bg-blue-200 text-blue-800 rounded-md hover:bg-blue-300 flex items-center gap-2 transition-colors"
+          >
+            <QrCode className="h-4 w-4" /> QR Kod Okut
+          </button>
+          <button
             onClick={() => setShowAdd(true)}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 flex items-center gap-2"
+            className="px-4 py-2 bg-emerald-200 text-emerald-800 rounded-md hover:bg-emerald-300 flex items-center gap-2 transition-colors"
           >
             <UserPlus className="h-4 w-4" /> Müşteri Ekle
           </button>
@@ -202,6 +210,73 @@ export default function CustomerSearchPage() {
           onClose={() => setSelectedCustomer(null)}
         />
       )}
+
+      <QrScannerModal
+        open={showQr}
+        onClose={() => setShowQr(false)}
+        onResult={async (text) => {
+          setShowQr(false);
+          try {
+            // Beklenen format örnekleri:
+            // 1) JSON: {"firstName":"...","lastName":"...","phone":"...","email":"..."}
+            // 2) URL: https://.../?firstName=...&lastName=...&phone=...&email=...
+            let payload: any = null;
+            try {
+              payload = JSON.parse(text);
+            } catch {
+              try {
+                const url = new URL(text);
+                const p = new URLSearchParams(url.search);
+                payload = {
+                  firstName: p.get('firstName') || undefined,
+                  lastName: p.get('lastName') || undefined,
+                  phone: p.get('phone') || undefined,
+                  email: p.get('email') || undefined,
+                  tcNumber: p.get('tcNumber') || undefined,
+                };
+              } catch {
+                // Düz metin ise telefon gibi alanlara düşebilir
+                payload = { phone: text };
+              }
+            }
+
+            // Minimal doğrulama
+            if (!payload?.phone && !payload?.firstName) {
+              toast.error('Okunan QR verisi geçersiz');
+              return;
+            }
+
+            const res = await fetch('/api/customers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                firstName: payload.firstName || 'QR',
+                lastName: payload.lastName || 'Müşteri',
+                phone: payload.phone || '',
+                email: payload.email || null,
+                tcNumber: payload.tcNumber || null,
+                segment: 'Aday',
+                totalSpent: 0,
+                consentPersonalData: false,
+                consentMarketing: false,
+                consentCall: false,
+                consentProfiling: false
+              })
+            });
+
+            if (res.ok) {
+              toast.success('QR ile müşteri eklendi');
+              setHasSearched(false);
+              setResults([]);
+            } else {
+              const data = await res.json().catch(() => ({}));
+              toast.error(data?.error || 'Müşteri eklenemedi');
+            }
+          } catch (e) {
+            toast.error('QR verisi işlenemedi');
+          }
+        }}
+      />
     </div>
   );
 }

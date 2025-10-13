@@ -142,52 +142,53 @@ export default function UsersList({ initialUsers, availableRoles }: UsersListPro
     <div className="space-y-6">
       {/* Search and Filters */}
       <div className="card">
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="space-y-4">
           {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Kullanıcı ara (isim, e-posta)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input pl-10 pr-4"
-              />
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <input
+              type="text"
+              placeholder="Kullanıcı ara (isim, e-posta)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="form-input pl-10 pr-4 w-full"
+            />
           </div>
 
-          {/* Filters */}
-          <div className="flex gap-3">
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-              className="form-input min-w-[120px]"
-            >
-              <option value="all">Tüm Durumlar</option>
-              <option value="active">Aktif</option>
-              <option value="inactive">Pasif</option>
-            </select>
+          {/* Filters and Add Button */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                className="form-input flex-1 sm:min-w-[120px]"
+              >
+                <option value="all">Tüm Durumlar</option>
+                <option value="active">Aktif</option>
+                <option value="inactive">Pasif</option>
+              </select>
 
-            {/* Role Filter */}
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="form-input min-w-[150px]"
-            >
-              <option value="all">Tüm Roller</option>
-              {availableRoles.map(role => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
-                </option>
-              ))}
-            </select>
+              {/* Role Filter */}
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="form-input flex-1 sm:min-w-[150px]"
+              >
+                <option value="all">Tüm Roller</option>
+                {availableRoles.map(role => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Add User Button */}
             <button
               onClick={() => setShowAddModal(true)}
-              className="btn-primary flex items-center gap-2 whitespace-nowrap"
+              className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
             >
               <Plus className="h-4 w-4" />
               Kullanıcı Ekle
@@ -204,8 +205,8 @@ export default function UsersList({ initialUsers, availableRoles }: UsersListPro
         </p>
       </div>
 
-      {/* Users Table */}
-      <div className="card overflow-hidden">
+      {/* Users List - Desktop Table View */}
+      <div className="hidden lg:block card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -305,6 +306,101 @@ export default function UsersList({ initialUsers, availableRoles }: UsersListPro
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Users List - Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {filteredUsers.length === 0 ? (
+          <div className="card text-center py-12 text-gray-500">
+            <div className="flex flex-col items-center gap-3">
+              <Shield className="h-12 w-12 text-gray-300" />
+              <p>Kullanıcı bulunamadı</p>
+            </div>
+          </div>
+        ) : (
+          filteredUsers.map((user) => (
+            <div key={user.id} className="card p-4 space-y-3">
+              {/* User Info Header */}
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 text-lg">
+                    {user.firstName} {user.lastName}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">ID: {user.id}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditingUser(user)}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Düzenle"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleToggleStatus(user.id, user.isActive)}
+                    disabled={loading}
+                    className={`p-2 rounded-lg transition-colors ${
+                      user.isActive 
+                        ? 'text-orange-600 hover:bg-orange-50' 
+                        : 'text-green-600 hover:bg-green-50'
+                    }`}
+                    title={user.isActive ? 'Pasif Yap' : 'Aktif Yap'}
+                  >
+                    {user.isActive ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
+                    disabled={loading}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Sil"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* User Details */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-600 w-16">E-posta:</span>
+                  <span className="text-sm text-gray-900">{user.email}</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-600 w-16">Rol:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {user.userRoles.length === 0 ? (
+                      <span className="text-sm text-gray-500">Rol atanmamış</span>
+                    ) : (
+                      user.userRoles.map((userRole) => (
+                        <span
+                          key={userRole.role.id}
+                          className={`${getRoleBadgeColor(userRole.role.name)} text-xs`}
+                        >
+                          {userRole.role.name}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-600 w-16">Durum:</span>
+                  <span className={user.isActive ? 'status-active' : 'status-inactive'}>
+                    {user.isActive ? 'Aktif' : 'Pasif'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-600 w-16">Kayıt:</span>
+                  <span className="text-sm text-gray-600">
+                    {new Date(user.createdAt).toLocaleDateString('tr-TR')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Modals */}

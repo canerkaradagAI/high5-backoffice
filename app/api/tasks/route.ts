@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const priority = searchParams.get('priority') || '';
     const assignedTo = searchParams.get('assignedTo') || '';
     const scope = searchParams.get('scope') || ''; // 'mine' (assigned to me) or 'requests' (created by me)
+    const assigneeRole = searchParams.get('assigneeRole') || 'all'; // Manager role filter
 
     const skip = (page - 1) * limit;
 
@@ -65,6 +66,26 @@ export async function GET(request: NextRequest) {
       where.assignedToId = assignedTo;
     }
 
+    // Manager: role-aware filtering according to clarified rules
+    if (assigneeRole && assigneeRole !== 'all') {
+      const roleMatchAssigned = { assignedTo: { userRoles: { some: { role: { name: assigneeRole } } } } } as any;
+      const roleMatchTarget = { targetRole: assigneeRole } as any;
+
+      if (status === 'Bekliyor') {
+        // Runner/SD için açılmış ama atan(a)mamış bekleyenler
+        (where.AND ||= []).push({ assignedToId: null, ...roleMatchTarget });
+      } else if (status === 'Devam Ediyor') {
+        // Seçilen role atanmış ve tamamlanmamış
+        (where.AND ||= []).push(roleMatchAssigned);
+      } else if (status === 'Tamamlandı' || status === 'Tamamlanan') {
+        // Seçilen role açılmış ve tamamlanmış
+        (where.AND ||= []).push(roleMatchTarget);
+      } else {
+        // Tümü: role atanmış olanlar + o role açılanlar (birlikte)
+        (where.AND ||= []).push({ OR: [roleMatchAssigned, roleMatchTarget] });
+      }
+    }
+
     const [tasks, totalCount] = await Promise.all([
       prisma.task.findMany({
         where,
@@ -76,7 +97,8 @@ export async function GET(request: NextRequest) {
               id: true,
               firstName: true,
               lastName: true,
-              email: true
+              email: true,
+              userRoles: { select: { role: { select: { name: true } } } }
             }
           },
           customer: {
@@ -137,7 +159,10 @@ export async function POST(request: NextRequest) {
       dueDate,
       assignedTo,
       customerId,
-      notes
+      notes,
+      deliveryLocation,
+      targetRole,
+      productCode
     } = body;
 
     // Validation
@@ -162,8 +187,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // AUTO_TASK_ASSIGNMENT parametresini kontrol et
+    const autoAssignmentParam = await prisma.parameter.findFirst({
+      where: { key: 'AUTO_TASK_ASSIGNMENT' }
+    });
+
+    const isAutoAssignmentEnabled = autoAssignmentParam?.value === 'true';
+
     // assignedTo guard: sadece geçerli bir kullanıcı ID'si ise ata; aksi halde havuza düşür
     let safeAssignedToId: string | null = null;
+    let finalStatus = status;
+
     if (assignedTo && typeof assignedTo === 'string') {
       try {
         const user = await prisma.user.findUnique({ where: { id: assignedTo } });
@@ -173,17 +207,60 @@ export async function POST(request: NextRequest) {
       } catch {}
     }
 
+    // Otomatik atama: Sadece Runner rolü için ve targetRole Runner ise
+    if (isAutoAssignmentEnabled && !safeAssignedToId && targetRole === 'Runner') {
+      try {
+        // En az iş yüküne sahip aktif Runner'ı bul
+        const runners = await prisma.user.findMany({
+          where: {
+            isActive: true,
+            userRoles: {
+              some: {
+                role: { name: 'Runner' },
+                isActive: true
+              }
+            }
+          },
+          include: {
+            assignedTasks: {
+              where: { 
+                status: { in: ['Devam Ediyor', 'ASSIGNED'] }
+              },
+              select: { id: true }
+            }
+          }
+        });
+
+        // En az görevi olan Runner'ı bul
+        const leastBusyRunner = runners.reduce((min, runner) => 
+          runner.assignedTasks.length < min.assignedTasks.length ? runner : min
+        );
+
+        if (leastBusyRunner) {
+          safeAssignedToId = leastBusyRunner.id;
+          finalStatus = 'Devam Ediyor'; // Otomatik atanan görevler direkt "Devam Ediyor" durumuna geçer
+          console.log(`🤖 Otomatik atama: ${title} → ${leastBusyRunner.firstName} ${leastBusyRunner.lastName} (${leastBusyRunner.assignedTasks.length} aktif görev)`);
+        }
+      } catch (error) {
+        console.error('Otomatik atama hatası:', error);
+        // Hata durumunda görev havuzda kalır
+      }
+    }
+
     const task = await prisma.task.create({
       data: {
         title: title.trim(),
         description: description?.trim(),
         type: type.trim(),
         priority,
-        status,
+        status: finalStatus,
         dueDate: dueDate ? new Date(dueDate) : null,
         assignedToId: safeAssignedToId,
         customerId,
         notes: notes?.trim(),
+        deliveryLocation: deliveryLocation?.trim(),
+        targetRole: targetRole?.trim(),
+        productCode: productCode?.trim(),
         createdById: session.user.id
       },
       include: {
@@ -192,7 +269,8 @@ export async function POST(request: NextRequest) {
             id: true,
             firstName: true,
             lastName: true,
-            email: true
+            email: true,
+            userRoles: { select: { role: { select: { name: true } } } }
           }
         },
         customer: {

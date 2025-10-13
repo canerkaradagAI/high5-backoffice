@@ -20,19 +20,42 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    // Görev havuzu: assignedToId null olan görevler (atama yapılmamış)
+    // Kullanıcının rolünü al
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        userRoles: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+
+    const userRole = user?.userRoles?.[0]?.role?.name || 'Kullanıcı';
+
+    // Görev havuzu: assignedToId null olan ve hedef rol eşleşen görevler
     const where: any = {
       assignedToId: null,
       status: {
         in: ['Bekliyor', 'PENDING'] // Sadece bekleyen görevler
-      }
+      },
+      // Rol bazlı filtreleme: targetRole null ise tüm roller görebilir, değilse sadece hedef rol
+      OR: [
+        { targetRole: null }, // targetRole belirtilmemiş görevler
+        { targetRole: userRole } // Kullanıcının rolü ile eşleşen görevler
+      ]
     };
 
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { customer: { fullName: { contains: search, mode: 'insensitive' } } }
+      where.AND = [
+        {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+            { customer: { fullName: { contains: search, mode: 'insensitive' } } }
+          ]
+        }
       ];
     }
 
@@ -45,7 +68,18 @@ export async function GET(request: NextRequest) {
         where,
         skip,
         take: limit,
-        include: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          type: true,
+          priority: true,
+          status: true,
+          dueDate: true,
+          createdAt: true,
+          completedAt: true,
+          deliveryLocation: true,
+          productCode: true,
           customer: {
             select: {
               id: true,

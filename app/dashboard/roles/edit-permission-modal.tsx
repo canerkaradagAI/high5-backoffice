@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+// Dialog component'i kaldırıldı, custom modal kullanılacak
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -92,15 +92,25 @@ export function EditPermissionModal({ permission, isOpen, onClose, onSuccess }: 
 
   if (!permission) return null;
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>İzni Düzenle</DialogTitle>
-          <DialogDescription>
-            İzin detaylarını güncelleyin.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50" 
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">İzni Düzenle</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              İzin detaylarını güncelleyin.
+            </p>
+          </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -134,7 +144,8 @@ export function EditPermissionModal({ permission, isOpen, onClose, onSuccess }: 
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }

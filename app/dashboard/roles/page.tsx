@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Tabs component'i kaldırıldı, custom tabs kullanılacak
 import { 
   Plus, 
   Search, 
@@ -230,20 +230,35 @@ export default function RolesPage() {
         </Card>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="roles" className="flex items-center gap-2">
+      {/* Custom Tabs */}
+      <div className="w-full">
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('roles')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'roles'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
             <Shield className="w-4 h-4" />
             Roller ({rolesTotalCount})
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="flex items-center gap-2">
+          </button>
+          <button
+            onClick={() => setActiveTab('permissions')}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'permissions'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
             <Key className="w-4 h-4" />
             İzinler ({permissionsTotalCount})
-          </TabsTrigger>
-        </TabsList>
+          </button>
+        </div>
 
-        <TabsContent value="roles" className="space-y-4">
+        {activeTab === 'roles' && (
+          <div className="space-y-4 mt-4">
           {/* Roles Header */}
           <div className="flex justify-between items-center">
             <div className="relative w-64">
@@ -271,9 +286,11 @@ export default function RolesPage() {
             onEdit={setEditingRole}
             onDelete={handleRoleDeleted}
           />
-        </TabsContent>
+          </div>
+        )}
 
-        <TabsContent value="permissions" className="space-y-4">
+        {activeTab === 'permissions' && (
+          <div className="space-y-4 mt-4">
           {/* Permissions Header */}
           <div className="flex justify-between items-center">
             <div className="relative w-64">
@@ -301,8 +318,9 @@ export default function RolesPage() {
             onEdit={setEditingPermission}
             onDelete={handlePermissionDeleted}
           />
-        </TabsContent>
-      </Tabs>
+          </div>
+        )}
+      </div>
 
       {/* Modals */}
       <AddRoleModal

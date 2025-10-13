@@ -16,7 +16,8 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Check
+  Check,
+  MapPin
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -33,6 +34,8 @@ interface Task {
   dueDate: string | null;
   completedAt: string | null;
   notes: string | null;
+  deliveryLocation: string | null;
+  targetRole: string | null;
   createdAt: string;
   updatedAt: string;
   assignedTo?: {
@@ -83,9 +86,31 @@ export function TasksList({
   getPriorityColor 
 }: TasksListProps) {
   const { data: session } = useSession();
+  const primaryRole = (session?.user as any)?.roles?.[0]?.name || 'Kullanıcı';
+  const isManager = primaryRole === 'Mağaza Müdürü';
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [takingId, setTakingId] = useState<string | null>(null);
   const [completingId, setCompletingId] = useState<string | null>(null);
+
+  const calculateWaitingTime = (createdAt: string, status: string, completedAt?: string | null) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    
+    // Eğer görev tamamlandıysa, tamamlanma zamanına göre hesapla
+    // Değilse şu anki zamana göre hesapla
+    const endTime = (status === 'Tamamlandı' && completedAt) ? new Date(completedAt) : now;
+    const diffInMinutes = Math.floor((endTime.getTime() - created.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} dakika`;
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return `${hours} saat`;
+    } else {
+      const days = Math.floor(diffInMinutes / 1440);
+      return `${days} gün`;
+    }
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -233,51 +258,71 @@ export function TasksList({
                     <p className="text-sm text-gray-600 mb-2 line-clamp-2">{task.description}</p>
                   )}
                   
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                  <div className="space-y-1 text-xs text-gray-500">
+                    {/* Runner/Satış Danışmanı */}
                     <div className="flex items-center gap-1">
-                      <span className="font-medium">Runner:</span>
+                      <User className="w-3 h-3" />
                       {task.assignedTo ? (
                         <span>
                           {`${(task.assignedTo.firstName || '').trim()} ${(task.assignedTo.lastName || '').trim()}`.trim() || task.assignedTo.email}
                         </span>
                       ) : (
-                        <span className="text-gray-400"></span>
+                        <span className="text-gray-400">Atanmamış</span>
                       )}
                     </div>
                     
-                    {task.customer && (
+                    {/* Teslim Lokasyonu */}
+                    {task.deliveryLocation && (
                       <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        <span>{task.customer.fullName}</span>
-                      </div>
-                    )}
-                    
-                    {task.assignedTo && (
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">Atanan:</span>
-                        <span>
-                          {task.assignedTo.firstName || ''} {task.assignedTo.lastName || ''}
+                        <MapPin className="w-3 h-3 text-blue-600" />
+                        <span className="text-blue-600 font-medium">
+                          {task.deliveryLocation}
                         </span>
                       </div>
                     )}
                     
+                    {/* Bekleme Süresi */}
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span className="text-red-600 font-medium">
+                        {calculateWaitingTime(task.createdAt, task.status, task.completedAt)}
+                      </span>
+                    </div>
+                    
+                    {/* Müşteri */}
+                    {task.customer && (
+                      <div className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        <span>Müşteri: {task.customer.fullName}</span>
+                      </div>
+                    )}
+                    
+                    {/* Bitiş Tarihi */}
                     {task.dueDate && (
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         <span>Bitiş: {formatDueDate(task.dueDate)}</span>
                       </div>
                     )}
-                    
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>Oluşturulma: {formatDate(task.createdAt)}</span>
-                    </div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2 ml-4">
-                  {/* Görevi Al - havuzdayken */}
-                  {(!task.assignedTo && (task.status === 'PENDING' || task.status === 'Bekliyor')) && (
+                  {/* Mağaza Müdürü: Görevi Al görünmez, Havuzdaki görevi iptal edebilir */}
+                  {isManager && !task.assignedTo && (task.status === 'PENDING' || task.status === 'Bekliyor') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(task.id)}
+                      disabled={deletingId === task.id}
+                      className="border-red-600 text-red-600 hover:bg-red-50"
+                    >
+                      {deletingId === task.id ? 'İptal ediliyor...' : 'Görevi İptal Et'}
+                    </Button>
+                  )}
+
+                  {/* Görevi Al - sadece müdür değilken, havuzdayken, oluşturan değilken ve hedef rol eşleşiyorsa */}
+                  {!isManager && (!task.assignedTo && (task.status === 'PENDING' || task.status === 'Bekliyor')) && task.createdBy.id !== session?.user?.id && (!task.targetRole || task.targetRole === primaryRole) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -286,6 +331,19 @@ export function TasksList({
                       className="border-orange-600 text-orange-600 hover:bg-orange-50"
                     >
                       {takingId === task.id ? 'Alınıyor...' : 'Görevi Al'}
+                    </Button>
+                  )}
+
+                  {/* Görevi İptal Et - oluşturan kişi kendi görevini iptal edebilir */}
+                  {!isManager && (!task.assignedTo && (task.status === 'PENDING' || task.status === 'Bekliyor')) && task.createdBy.id === session?.user?.id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(task.id)}
+                      disabled={deletingId === task.id}
+                      className="border-red-600 text-red-600 hover:bg-red-50"
+                    >
+                      {deletingId === task.id ? 'İptal ediliyor...' : 'Görevi İptal Et'}
                     </Button>
                   )}
 

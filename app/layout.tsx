@@ -7,10 +7,10 @@ import Providers from '../components/providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'OLKA Backoffice - Premium Mağaza Yönetim Sistemi',
-  description: 'OLKA premium mağaza backoffice uygulaması - Müşteri, görev ve kullanıcı yönetimi',
-  keywords: 'olka, backoffice, mağaza, yönetim, premium',
-  authors: [{ name: 'OLKA Tech Team' }],
+  title: 'High5 Backoffice - Premium Mağazacılık Yönetim Sistemi',
+  description: 'High5 premium mağazacılık backoffice uygulaması - Müşteri, görev ve kullanıcı yönetimi',
+  keywords: 'high5, backoffice, mağazacılık, yönetim, premium',
+  authors: [{ name: 'High5 Tech Team' }],
 };
 
 export default function RootLayout({

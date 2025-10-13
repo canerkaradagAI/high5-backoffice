@@ -5,7 +5,7 @@ import { prisma } from '../../../../lib/db';
 import CustomersList from '../../customers/customers-list';
 
 export const metadata = {
-  title: 'Müşteri Yönetimi | OLKA Backoffice',
+  title: 'Müşteri Yönetimi | High5 Backoffice',
   description: 'Müşterileri yönetin, segmentleri takip edin ve alışveriş geçmişlerini inceleyin',
 };
 

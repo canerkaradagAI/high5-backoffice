@@ -2,12 +2,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+// Dialog component'i kaldırıldı, custom modal kullanılacak
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// Select component'i kaldırıldı, custom dropdown kullanılacak
 import toast from 'react-hot-toast';
 
 interface Parameter {
@@ -45,6 +45,8 @@ interface EditParameterModalProps {
 
 export function EditParameterModal({ parameter, isOpen, onClose, onSuccess, categories, types }: EditParameterModalProps) {
   const [loading, setLoading] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   
   const [formData, setFormData] = useState({
     key: '',
@@ -137,6 +139,8 @@ export function EditParameterModal({ parameter, isOpen, onClose, onSuccess, cate
       description: '',
       category: 'SYSTEM'
     });
+    setShowCategoryDropdown(false);
+    setShowTypeDropdown(false);
     onClose();
   };
 
@@ -168,54 +172,96 @@ export function EditParameterModal({ parameter, isOpen, onClose, onSuccess, cate
 
   if (!parameter) return null;
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Parametreyi Düzenle</DialogTitle>
-          <DialogDescription>
-            Parametre detaylarını güncelleyin.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50" 
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Parametreyi Düzenle</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Parametre detaylarını güncelleyin.
+            </p>
+          </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="relative">
               <Label htmlFor="category">Kategori *</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Kategori seçin" />
-                </SelectTrigger>
-                <SelectContent>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCategoryDropdown(!showCategoryDropdown);
+                  setShowTypeDropdown(false);
+                }}
+                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {categories.find(c => c.value === formData.category)?.label || "Kategori seçin"}
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2">▼</span>
+              </button>
+              
+              {showCategoryDropdown && (
+                <div className="absolute z-[60] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                   {categories.map((category) => {
                     const Icon = category.icon;
                     return (
-                      <SelectItem key={category.value} value={category.value}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="w-4 h-4" />
-                          {category.label}
-                        </div>
-                      </SelectItem>
+                      <button
+                        key={category.value}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, category: category.value }));
+                          setShowCategoryDropdown(false);
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <Icon className="w-4 h-4" />
+                        {category.label}
+                      </button>
                     );
                   })}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
 
-            <div>
+            <div className="relative">
               <Label htmlFor="type">Tür *</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tür seçin" />
-                </SelectTrigger>
-                <SelectContent>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTypeDropdown(!showTypeDropdown);
+                  setShowCategoryDropdown(false);
+                }}
+                className="w-full px-3 py-2 text-left border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {types.find(t => t.value === formData.type)?.label || "Tür seçin"}
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2">▼</span>
+              </button>
+              
+              {showTypeDropdown && (
+                <div className="absolute z-[60] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                   {types.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, type: type.value }));
+                        setShowTypeDropdown(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-gray-100"
+                    >
                       {type.label}
-                    </SelectItem>
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -276,7 +322,8 @@ export function EditParameterModal({ parameter, isOpen, onClose, onSuccess, cate
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }

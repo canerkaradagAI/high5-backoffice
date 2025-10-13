@@ -16,23 +16,23 @@ export async function GET(request: NextRequest) {
     const whereClause: any = {};
 
     if (phone) {
-      whereClause.phone = { contains: phone, mode: 'insensitive' };
+      whereClause.phone = { contains: phone };
     }
 
     if (email) {
-      whereClause.email = { contains: email, mode: 'insensitive' };
+      whereClause.email = { contains: email };
     }
 
     if (name) {
       whereClause.OR = [
-        { firstName: { contains: name, mode: 'insensitive' } },
-        { lastName: { contains: name, mode: 'insensitive' } },
-        { fullName: { contains: name, mode: 'insensitive' } }
+        { firstName: { contains: name } },
+        { lastName: { contains: name } },
+        { fullName: { contains: name } }
       ];
     }
 
     if (nationalId) {
-      whereClause.tcNumber = { contains: nationalId, mode: 'insensitive' };
+      whereClause.tcNumber = { contains: nationalId };
     }
 
     const customers = await prisma.customer.findMany({

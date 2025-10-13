@@ -55,7 +55,18 @@ export async function GET(request: NextRequest) {
         where,
         skip,
         take: limit,
-        include: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          type: true,
+          priority: true,
+          status: true,
+          dueDate: true,
+          createdAt: true,
+          completedAt: true,
+          deliveryLocation: true,
+          productCode: true,
           customer: {
             select: {
               id: true,

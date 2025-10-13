@@ -7,17 +7,16 @@ export async function GET(request: NextRequest) {
     const sku = searchParams.get('sku');
     const barcode = searchParams.get('barcode');
 
-    if (!sku && !barcode) {
+    const searchTerm = (sku || barcode || '').trim();
+    if (!searchTerm) {
       return NextResponse.json({ error: 'SKU or barcode required' }, { status: 400 });
     }
 
-    const searchTerm = sku || barcode;
-    
     const product = await prisma.product.findFirst({
       where: {
         OR: [
           { sku: searchTerm },
-          { name: { contains: searchTerm, mode: 'insensitive' } }
+          { name: { contains: searchTerm } }
         ],
         isActive: true
       }

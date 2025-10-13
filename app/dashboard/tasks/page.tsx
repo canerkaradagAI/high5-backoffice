@@ -26,6 +26,7 @@ import { AddTaskModal } from './add-task-modal';
 import { EditTaskModal } from './edit-task-modal';
 import { TaskDetailModal } from './task-detail-modal';
 import toast from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
 
 interface TaskStats {
   summary: {
@@ -40,6 +41,18 @@ interface TaskStats {
   priority: Array<{ priority: string; count: number }>;
   type: Array<{ type: string; count: number }>;
   assignment: Array<{ userId: string; userName: string; taskCount: number }>;
+}
+
+interface ManagerStats {
+  statusCounts: {
+    total: number;
+    pending: number;
+    inProgress: number;
+    completed: number;
+    todayCompleted: number;
+  };
+  runners: Array<{ id: string; name: string; activeCount: number; completedToday: number; status: 'Aktif' | 'Pasif' }>;
+  consultants: Array<{ id: string; name: string; activeCount: number; completedToday: number; status: 'Aktif' | 'Pasif'; activeCustomers: number }>;
 }
 
 interface Task {
@@ -59,6 +72,7 @@ interface Task {
     firstName: string | null;
     lastName: string | null;
     email: string;
+    userRoles?: { role: { name: string } }[];
   } | null;
   customer?: {
     id: string;
@@ -78,8 +92,13 @@ export default function TasksPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const view = searchParams?.get('view');
+  const { data: session } = useSession();
+  const primaryRole = (session?.user as any)?.roles?.[0]?.name || 'Kullanıcı';
+  const isManager = primaryRole === 'Mağaza Müdürü';
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stats, setStats] = useState<TaskStats | null>(null);
+  const [managerStats, setManagerStats] = useState<ManagerStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -90,6 +109,7 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [assignedToFilter, setAssignedToFilter] = useState('all');
+  const [assigneeRoleFilter, setAssigneeRoleFilter] = useState<'all' | 'Satış Danışmanı' | 'Runner'>('all');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -116,11 +136,21 @@ export default function TasksPage() {
 
   const fetchStats = async () => {
     try {
-      const scope = searchParams?.get('view') === 'my' ? 'mine' : 'requests';
+      const isManager = primaryRole === 'Mağaza Müdürü';
+      const scope = isManager ? 'all' : (searchParams?.get('view') === 'my' ? 'mine' : 'requests');
       const response = await fetch(`/api/tasks/stats?scope=${scope}`);
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
+      }
+      if (isManager) {
+        const res = await fetch(`/api/tasks/stats/manager?role=${encodeURIComponent(assigneeRoleFilter)}`);
+        if (res.ok) {
+          const d = await res.json();
+          setManagerStats(d);
+        }
+      } else {
+        setManagerStats(null);
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -176,10 +206,14 @@ export default function TasksPage() {
         }
       }
 
+      if (isManager) {
+        params.set('assigneeRole', assigneeRoleFilter);
+      }
       const response = await fetch(`/api/tasks?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setTasks(data.tasks);
+        // Sunucu tarafı role göre filtreleme yaptığı için doğrudan kullan
+        setTasks(data.tasks as Task[]);
         setTotalPages(data.pagination.pages);
         setTotalCount(data.pagination.total);
       }
@@ -193,11 +227,11 @@ export default function TasksPage() {
 
   useEffect(() => {
     fetchStats();
-  }, [searchParams]);
+  }, [searchParams, isManager, assigneeRoleFilter]);
 
   useEffect(() => {
     fetchTasks();
-  }, [currentPage, searchTerm, statusFilter, priorityFilter, assignedToFilter, searchParams]);
+  }, [currentPage, searchTerm, statusFilter, priorityFilter, assignedToFilter, searchParams, assigneeRoleFilter, isManager]);
 
   const handleTaskAdded = () => {
     fetchTasks();
@@ -267,8 +301,17 @@ export default function TasksPage() {
             Geri
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{view === 'my' ? 'Görevlerim' : view === 'consultant-pool' ? 'Satış Danışmanı Görev Havuzu' : 'Taleplerim'}</h1>
-            <p className="text-gray-600 mt-1">Müşteri görevlerini ve takiplerini yönetin</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {view === 'my' ? 'Görevlerim' : 
+               view === 'consultant-pool' ? 'Görev Havuzu' : 
+               view === 'requests' ? 'Taleplerim' : 'Görevler'}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {view === 'my' ? 'Görevlerinizi takip edin ve yönetin' : 
+               view === 'consultant-pool' ? 'Görevleri takip edin ve yönetin' : 
+               view === 'requests' ? 'Taleplerinizi takip edin ve yönetin' :
+               'Müşteri görevlerini ve takiplerini yönetin'}
+            </p>
           </div>
         </div>
         {view !== 'consultant-pool' && (
@@ -282,8 +325,98 @@ export default function TasksPage() {
         )}
       </div>
 
-      {/* Stats Cards */}
-      {stats && view !== 'consultant-pool' && (
+      
+
+      {/* Manager: Role filter directly under subtitle */}
+      {isManager && view !== 'consultant-pool' && (
+        <div className="mt-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {(['all','Satış Danışmanı','Runner'] as const).map((opt) => {
+              const active = assigneeRoleFilter === opt;
+              return (
+              <button
+                key={opt}
+                  aria-selected={active}
+                onClick={() => setAssigneeRoleFilter(opt)}
+                  className={`
+                    inline-flex items-center px-4 py-1.5 text-sm rounded-full transition-colors border shadow-sm
+                    ${active 
+                      ? 'bg-blue-600 text-white border-blue-600' 
+                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}
+                  `}
+              >
+                {opt === 'all' ? 'Tümü' : opt}
+              </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Manager: Today completed summary */}
+      {isManager && view !== 'consultant-pool' && managerStats && (
+        <div className="text-xs text-gray-600 -mt-2">Bugün tamamlanan: {managerStats.statusCounts.todayCompleted} görev</div>
+      )}
+
+      {/* Manager: Personnel status panels (role-aware) */}
+      {isManager && view !== 'consultant-pool' && managerStats && (
+        <div className="space-y-6">
+          {/* Runner Durumu */}
+          {(assigneeRoleFilter === 'all' || assigneeRoleFilter === 'Runner') && (
+            <div className="bg-white rounded-lg border shadow-sm">
+              <div className="px-5 py-3 font-semibold text-gray-800">Runner Durumu</div>
+              <div className="px-5 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {managerStats.runners.map((u) => (
+                  <div key={u.id} className="rounded-md border p-4 bg-gray-50">
+                    <div className="text-sm font-medium text-gray-900">{u.name}</div>
+                    <div className="mt-1 text-xs text-gray-600">{u.activeCount} aktif • {u.completedToday} tamamlandı</div>
+                    <div className={`mt-2 inline-block text-[11px] px-2 py-0.5 rounded-full ${u.status==='Aktif' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'}`}>{u.status}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Satış Danışmanı Durumu */}
+          {(assigneeRoleFilter === 'all' || assigneeRoleFilter === 'Satış Danışmanı') && (
+            <div className="bg-white rounded-lg border shadow-sm">
+              <div className="px-5 py-3 font-semibold text-gray-800">Satış Danışmanı Durumu</div>
+              <div className="px-5 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {managerStats.consultants.map((u) => (
+                  <div key={u.id} className="rounded-md border p-4 bg-gray-50">
+                    <div className="text-sm font-medium text-gray-900">{u.name}</div>
+                    <div className="mt-1 text-xs text-gray-600">{u.activeCustomers} aktif müşteri • {u.activeCount} aktif görev • {u.completedToday} bugün tamamlandı</div>
+                    <div className={`mt-2 inline-block text-[11px] px-2 py-0.5 rounded-full ${u.status==='Aktif' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'}`}>{u.status}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manager: Status tabs moved below panels */}
+      {isManager && view !== 'consultant-pool' && managerStats && (
+        <div className="flex items-center gap-2">
+          <button onClick={setFilterAll} className={`px-3 py-1.5 rounded-full text-sm border ${statusFilter==='all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+            Tümü ({managerStats.statusCounts.total})
+          </button>
+          <button onClick={setFilterPending} className={`px-3 py-1.5 rounded-full text-sm border ${statusFilter==='Bekliyor' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'}`}>
+            Beklemede ({managerStats.statusCounts.pending})
+          </button>
+          <button onClick={setFilterInProgress} className={`px-3 py-1.5 rounded-full text-sm border ${statusFilter==='Devam Ediyor' ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200'}`}>
+            Devam Ediyor ({managerStats.statusCounts.inProgress})
+          </button>
+          <button onClick={setFilterCompleted} className={`px-3 py-1.5 rounded-full text-sm border ${statusFilter==='Tamamlandı' ? 'bg-green-600 text-white border-green-600' : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'}`}>
+            Tamamlandı ({managerStats.statusCounts.completed})
+          </button>
+        </div>
+      )}
+
+      
+
+      {/* Stats Cards - Mağaza Müdürü için gizli */}
+      {stats && view !== 'consultant-pool' && !isManager && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card onClick={setFilterAll} className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 cursor-pointer hover:shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
@@ -330,8 +463,6 @@ export default function TasksPage() {
           </Card>
         </div>
       )}
-
-      {/* Durum filtresi kaldırıldı: tüm görevler listelenir */}
 
       {/* Tasks List */}
       <TasksList 

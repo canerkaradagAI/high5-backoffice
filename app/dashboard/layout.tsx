@@ -16,7 +16,8 @@ import {
   BarChart3,
   LogOut,
   User,
-  Bell
+  Bell,
+  FileText
 } from 'lucide-react';
 
 interface Permission {
@@ -92,6 +93,13 @@ export default function DashboardLayout({
       show: hasPermission('Görev Görüntüleme')
     },
     {
+      name: 'Görev Tanımları',
+      icon: FileText,
+      href: '/dashboard/task-definitions',
+      active: pathname?.startsWith('/dashboard/task-definitions') || false,
+      show: primaryRole === 'Mağaza Müdürü'
+    },
+    {
       name: 'Parametreler',
       icon: Settings,
       href: '/dashboard/parameters',
@@ -118,8 +126,10 @@ export default function DashboardLayout({
     await signOut({ callbackUrl: '/login' });
   };
 
-  // Runner için menübar'ı kaldır
+  // Runner ve Satış Danışmanı için menübar'ı kaldır
   const isRunner = primaryRole === 'Runner';
+  const isSalesConsultant = primaryRole === 'Satış Danışmanı';
+  const hideSidebar = isRunner || isSalesConsultant;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -127,7 +137,7 @@ export default function DashboardLayout({
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 py-4">
           <div className="flex items-center space-x-4">
-            {!isRunner && (
+            {!hideSidebar && (
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 className="lg:hidden p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -140,13 +150,13 @@ export default function DashboardLayout({
             )}
             
             <div className="flex items-center space-x-3">
-              <img src="/high5.png" alt="High5" className="h-6 w-auto" />
+              <img src="/logo/high5.svg" alt="High5" className="h-6 w-auto" />
             </div>
           </div>
 
           <div className="flex items-center space-x-4 relative">
-            {/* Notifications button - Runner için kaldır */}
-            {!isRunner && (
+            {/* Notifications button - Runner ve Satış Danışmanı için kaldır */}
+            {!hideSidebar && (
               <div className="relative">
                 <button
                   className="p-2 rounded-lg hover:bg-gray-100 relative"
@@ -164,9 +174,9 @@ export default function DashboardLayout({
                 onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                 className="flex items-center space-x-3 cursor-pointer group"
               >
-                <div className="hidden md:block text-right">
-                  <p className="text-sm font-medium text-gray-900">{session?.user?.firstName} {session?.user?.lastName}</p>
-                  <p className="text-xs text-gray-600">{primaryRole}</p>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-900 truncate max-w-32">{session?.user?.firstName} {session?.user?.lastName}</p>
+                  <p className="text-xs text-gray-600 truncate max-w-32">{primaryRole}</p>
                 </div>
                 <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
                   <User className="h-4 w-4 text-gray-600" />
@@ -191,8 +201,8 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      {isRunner ? (
-        /* Runner için sadece main content */
+      {hideSidebar ? (
+        /* Runner ve Satış Danışmanı için sadece main content */
         <main className="p-4 md:p-6 lg:p-8">
           {children}
         </main>

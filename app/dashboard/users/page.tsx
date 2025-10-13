@@ -6,7 +6,7 @@ import { prisma } from '../../../lib/db';
 import UsersList from './users-list';
 
 export const metadata = {
-  title: 'Kullanıcı Yönetimi | OLKA Backoffice',
+  title: 'Kullanıcı Yönetimi | High5 Backoffice',
   description: 'Kullanıcıları yönetin, roller atayın ve yetkileri düzenleyin',
 };
 

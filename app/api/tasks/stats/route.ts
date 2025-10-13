@@ -1,10 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,8 +12,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const scope = searchParams.get('scope') || 'requests'; // 'mine' | 'requests'
+    const scope = searchParams.get('scope') || 'requests'; // 'mine' | 'requests' | 'all'
     const isMine = scope === 'mine';
+    const isAll = scope === 'all';
+
+    const whereMine = { assignedToId: session.user.id } as any;
+    const whereRequests = { createdById: session.user.id } as any;
+    const whereAll = {} as any;
+    const scopeWhere = isAll ? whereAll : isMine ? whereMine : whereRequests;
 
     const [
       totalTasks,
@@ -28,62 +32,54 @@ export async function GET(request: NextRequest) {
       assignmentStats
     ] = await Promise.all([
       // Total tasks
-      isMine
-        ? prisma.task.count({ where: { assignedToId: session.user.id } })
-        : prisma.task.count({ where: { createdById: session.user.id } }),
+      prisma.task.count({ where: scopeWhere }),
       
-      // Pending tasks: not assigned, created by current user
-      isMine
-        ? prisma.task.count({ where: { assignedToId: session.user.id, OR: [{ status: 'Bekliyor' }, { status: 'PENDING' }] } })
-        : prisma.task.count({ where: { createdById: session.user.id, assignedToId: null, OR: [{ status: 'Bekliyor' }, { status: 'PENDING' }] } }),
+      // Pending tasks
+      prisma.task.count({ where: { ...scopeWhere, OR: [{ status: 'Bekliyor' }, { status: 'PENDING' }] } }),
       
-      // In progress tasks: assigned (runner'a atanmış), not completed, created by current user
-      isMine
-        ? prisma.task.count({ where: { assignedToId: session.user.id, OR: [{ status: 'Devam Ediyor' }, { status: 'ASSIGNED' }] } })
-        : prisma.task.count({
-            where: {
-              createdById: session.user.id,
-              OR: [
-                { status: 'Devam Ediyor' },
-                { status: 'ASSIGNED' }
-              ]
-            }
-          }),
-      
-      // Completed tasks: marked completed by runner, created by current user
-      isMine
-        ? prisma.task.count({ where: { assignedToId: session.user.id, status: 'Tamamlandı' } })
-        : prisma.task.count({ where: { createdById: session.user.id, status: 'Tamamlandı' } }),
-      
-      // Overdue tasks (for current user)
+      // In progress tasks
       prisma.task.count({
         where: {
-          ...(isMine ? { assignedToId: session.user.id } : { createdById: session.user.id }),
+          ...scopeWhere,
+          OR: [
+            { status: 'Devam Ediyor' },
+            { status: 'ASSIGNED' }
+          ]
+        }
+      }),
+      
+      // Completed tasks
+      prisma.task.count({ where: { ...scopeWhere, status: 'Tamamlandı' } }),
+      
+      // Overdue tasks
+      prisma.task.count({
+        where: {
+          ...scopeWhere,
           dueDate: { lt: new Date() },
           status: { notIn: ['Tamamlandı', 'İptal'] }
         }
       }),
       
-      // Priority stats (current user's tasks)
+      // Priority stats
       prisma.task.groupBy({
         by: ['priority'],
         _count: { priority: true },
-        where: { ...(isMine ? { assignedToId: session.user.id } : { createdById: session.user.id }) }
+        where: scopeWhere
       }),
       
-      // Type stats (current user's tasks)
+      // Type stats
       prisma.task.groupBy({
         by: ['type'],
         _count: { type: true },
         orderBy: { _count: { type: 'desc' } },
-        where: { ...(isMine ? { assignedToId: session.user.id } : { createdById: session.user.id }) }
+        where: scopeWhere
       }),
       
-      // Assignment stats (current user's tasks)
+      // Assignment stats
       prisma.task.groupBy({
         by: ['assignedToId'],
         _count: { assignedToId: true },
-        where: { assignedToId: { not: null }, ...(isMine ? { assignedToId: session.user.id } : { createdById: session.user.id }) }
+        where: { ...scopeWhere, assignedToId: { not: null } }
       })
     ]);
 

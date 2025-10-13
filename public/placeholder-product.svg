@@ -1,0 +1,61 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Beyaz arka plan -->
+  <rect width="400" height="400" fill="#FFFFFF"/>
+  
+  <!-- Ayakkabı gövdesi - açık gri -->
+  <path d="M80 280 Q80 200 120 200 L280 200 Q320 200 320 280 L320 320 Q320 340 300 340 L100 340 Q80 340 80 320 Z" fill="#D3D3D3" stroke="#B0B0B0" stroke-width="2"/>
+  
+  <!-- Burun kısmı - koyu gri file -->
+  <path d="M80 280 Q80 250 100 250 L120 250 Q140 250 140 280" fill="#696969" stroke="#555555" stroke-width="1"/>
+  
+  <!-- Koruyucu katman - açık gri -->
+  <path d="M100 250 Q120 250 120 280" fill="#D3D3D3" stroke="#B0B0B0" stroke-width="1"/>
+  
+  <!-- Bağcık delikleri -->
+  <circle cx="150" cy="240" r="6" fill="#000000"/>
+  <circle cx="180" cy="240" r="6" fill="#000000"/>
+  <circle cx="210" cy="240" r="6" fill="#000000"/>
+  <circle cx="240" cy="240" r="6" fill="#000000"/>
+  
+  <!-- Turuncu detaylar -->
+  <circle cx="150" cy="240" r="3" fill="#FF8C00"/>
+  <circle cx="180" cy="240" r="3" fill="#FF8C00"/>
+  
+  <!-- Skechers logosu - metalik bronz/turuncu -->
+  <text x="200" y="200" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#CD853F" text-anchor="middle">S</text>
+  
+  <!-- 100% WATERPROOF yazısı -->
+  <text x="200" y="190" font-family="Arial, sans-serif" font-size="10" fill="#000000" text-anchor="middle">100% WATERPROOF</text>
+  
+  <!-- Orta taban - kalın ve katmanlı -->
+  <rect x="100" y="320" width="200" height="30" rx="5" fill="#D3D3D3"/>
+  <rect x="100" y="330" width="200" height="20" rx="3" fill="#696969"/>
+  
+  <!-- archFit yazısı -->
+  <text x="200" y="345" font-family="Arial, sans-serif" font-size="8" fill="#FF8C00" text-anchor="middle">archFit</text>
+  
+  <!-- Dış taban - kahverengi/bej tırtıklı -->
+  <rect x="80" y="350" width="240" height="40" rx="10" fill="#DEB887"/>
+  
+  <!-- Tırtıklı desen -->
+  <path d="M90 360 L110 360 L100 370 L90 360" fill="#CD853F"/>
+  <path d="M120 360 L140 360 L130 370 L120 360" fill="#CD853F"/>
+  <path d="M150 360 L170 360 L160 370 L150 360" fill="#CD853F"/>
+  <path d="M180 360 L200 360 L190 370 L180 360" fill="#CD853F"/>
+  <path d="M210 360 L230 360 L220 370 L210 360" fill="#CD853F"/>
+  <path d="M240 360 L260 360 L250 370 L240 360" fill="#CD853F"/>
+  <path d="M270 360 L290 360 L280 370 L270 360" fill="#CD853F"/>
+  <path d="M300 360 L320 360 L310 370 L300 360" fill="#CD853F"/>
+  
+  <!-- GOOD YEAR logosu -->
+  <text x="200" y="385" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFD700" text-anchor="middle">GOOD YEAR</text>
+  
+  <!-- Bağcıklar -->
+  <line x1="140" y1="240" x2="160" y2="240" stroke="#D3D3D3" stroke-width="2"/>
+  <line x1="170" y1="240" x2="190" y2="240" stroke="#D3D3D3" stroke-width="2"/>
+  <line x1="200" y1="240" x2="220" y2="240" stroke="#D3D3D3" stroke-width="2"/>
+  <line x1="230" y1="240" x2="250" y2="240" stroke="#D3D3D3" stroke-width="2"/>
+  
+  <!-- Çekme halkası -->
+  <circle cx="320" cy="200" r="8" fill="#D3D3D3" stroke="#B0B0B0" stroke-width="1"/>
+</svg>

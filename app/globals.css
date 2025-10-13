@@ -8,13 +8,13 @@
   --background-start-rgb: 248, 250, 252;
   --background-end-rgb: 255, 255, 255;
   
-  /* Pastel Mavi Palet */
-  --olka-primary: #7DD3FC;     /* Sky-300 - Ana pastel mavi */
-  --olka-secondary: #BAE6FD;    /* Sky-200 - Daha açık pastel */
-  --olka-accent: #38BDF8;       /* Sky-400 - Vurgu rengi */
-  --olka-light: #F0F9FF;        /* Sky-50 - En açık ton */
-  --olka-medium: #E0F2FE;       /* Sky-100 - Orta ton */
-  --olka-dark: #0EA5E9;         /* Sky-500 - Koyu ton */
+  /* High5 Siyah-Beyaz Palet */
+  --olka-primary: #000000;      /* Siyah - Ana renk */
+  --olka-secondary: #FFFFFF;    /* Beyaz - İkincil renk */
+  --olka-accent: #1F2937;       /* Gray-800 - Vurgu rengi */
+  --olka-light: #F9FAFB;        /* Gray-50 - En açık ton */
+  --olka-medium: #F3F4F6;       /* Gray-100 - Orta ton */
+  --olka-dark: #111827;         /* Gray-900 - Koyu ton */
   
   /* Gri Tonları */
   --olka-gray-50: #F8FAFC;
@@ -29,7 +29,7 @@
   /* Gradient Variables */
   --gradient-primary: linear-gradient(135deg, var(--olka-primary) 0%, var(--olka-accent) 100%);
   --gradient-light: linear-gradient(135deg, var(--olka-light) 0%, var(--olka-medium) 100%);
-  --gradient-soft: linear-gradient(135deg, rgba(125, 211, 252, 0.1) 0%, rgba(186, 230, 253, 0.15) 100%);
+  --gradient-soft: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 0%, rgba(31, 41, 55, 0.08) 100%);
 }
 
 * {
@@ -200,12 +200,12 @@ a {
 .btn-primary {
   background: var(--gradient-primary);
   @apply text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-300;
-  box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(125, 211, 252, 0.4);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary:active {
@@ -227,13 +227,13 @@ a {
 .card {
   @apply bg-white rounded-2xl p-6 transition-all duration-300;
   border: 1px solid var(--olka-gray-200);
-  box-shadow: 0 4px 20px rgba(125, 211, 252, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(10px);
 }
 
 .card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 35px rgba(125, 211, 252, 0.15);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
   border-color: var(--olka-primary);
 }
 
