@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,7 +90,7 @@ interface Task {
   };
 }
 
-export default function TasksPage() {
+function TasksPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const view = searchParams?.get('view');
@@ -504,5 +504,13 @@ export default function TasksPage() {
         getPriorityColor={getPriorityColor}
       />
     </div>
+  );
+}
+
+export default function TasksPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TasksPageContent />
+    </Suspense>
   );
 }

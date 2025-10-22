@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
@@ -45,7 +45,7 @@ const DELIVERY_LOCATIONS = [
   'Kasa'
 ];
 
-export default function NewTaskPage() {
+function NewTaskPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -366,5 +366,13 @@ export default function NewTaskPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function NewTaskPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewTaskPageContent />
+    </Suspense>
   );
 }
