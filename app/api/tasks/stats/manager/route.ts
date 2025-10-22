@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 function startOfToday(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
