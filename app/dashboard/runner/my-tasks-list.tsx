@@ -91,10 +91,37 @@ export function MyTasksList({
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [scannedBarcode, setScannedBarcode] = useState('');
   const [scanning, setScanning] = useState(false);
+  const [productDetails, setProductDetails] = useState<Record<string, any>>({});
 
   useEffect(() => {
     setLocalTasks(tasks);
+    
+    // Ürün kodları olan görevler için ürün bilgilerini çek
+    tasks.forEach(task => {
+      if (task.productCode && !productDetails[task.id]) {
+        // Eğer sadece barkod varsa, ürün bilgilerini çek
+        const productCode = task.productCode.trim();
+        if (/^\d+$/.test(productCode)) { // Sadece rakam ise barkod
+          fetchProductDetails(productCode, task.id);
+        }
+      }
+    });
   }, [tasks]);
+
+  const fetchProductDetails = async (sku: string, taskId: string) => {
+    try {
+      const response = await fetch(`/api/products/search?sku=${sku}`);
+      if (response.ok) {
+        const product = await response.json();
+        setProductDetails(prev => ({
+          ...prev,
+          [taskId]: product
+        }));
+      }
+    } catch (error) {
+      console.error('Ürün bilgileri çekilemedi:', error);
+    }
+  };
 
   const calculateWaitingTime = (createdAt: string, status: string, completedAt?: string | null) => {
     const now = new Date();
@@ -177,6 +204,13 @@ export function MyTasksList({
     setScannedBarcode('');
   }
 
+  // Barkod popup'ını kapat
+  function closeBarcodePopup() {
+    setBarcodePopupOpen(false);
+    setCurrentTaskId(null);
+    setScannedBarcode('');
+  }
+
   // Barkod okutma işlemi
   async function handleBarcodeScan() {
     if (!scannedBarcode.trim() || !currentTaskId) return;
@@ -220,12 +254,6 @@ export function MyTasksList({
     }
   }
 
-  // Popup'ı kapat
-  function closeBarcodePopup() {
-    setBarcodePopupOpen(false);
-    setCurrentTaskId(null);
-    setScannedBarcode('');
-  }
 
   if (loading) {
     return (
@@ -290,12 +318,21 @@ export function MyTasksList({
                       <span>Atandı</span>
                     </div>
                     
-                    {/* Ürün Kodu - Sadece Ürün Getir görevlerinde göster */}
-                    {task.productCode && (task.type === 'customer_product_delivery' || task.type === 'customer_cabin_delivery') && (
+                    {/* Ürün Kodu - Ürün kodu olan tüm görevlerde göster */}
+                    {task.productCode && (
                       <div className="flex items-center gap-1">
                         <Package className="w-3 h-3 text-green-600" />
                         <span className="text-green-600 font-medium">
-                          Ürün: {task.productCode}
+                          Ürün: {(() => {
+                            const productCode = task.productCode.trim();
+                            // Eğer sadece rakam ise ve ürün detayları varsa tam formatı göster
+                            if (/^\d+$/.test(productCode) && productDetails[task.id]) {
+                              const product = productDetails[task.id];
+                              return `${product.sku} - ${product.name} - ${product.size}`;
+                            }
+                            // Aksi halde mevcut formatı göster
+                            return productCode;
+                          })()}
                         </span>
                       </div>
                     )}
@@ -341,11 +378,11 @@ export function MyTasksList({
                     <Button
                       size="sm"
                       onClick={() => {
-                        // Ürün getirme görevleri için barkod okutma popup'ı aç
-                        if (task.type === 'customer_product_delivery' || task.type === 'customer_cabin_delivery') {
+                        // Ürün kodu olan görevler için barkod okutma popup'ı aç
+                        if (task.productCode) {
                           handleCompleteWithBarcode(task.id);
                         } else {
-                          // Diğer görevler için normal tamamlama
+                          // Ürün kodu olmayan görevler için normal tamamlama
                           handleComplete(task.id);
                         }
                       }}

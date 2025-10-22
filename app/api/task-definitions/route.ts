@@ -13,14 +13,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Rol kontrolü - sadece Mağaza Müdürü
+    // Rol kontrolü - Mağaza Müdürü ve Satış Danışmanı erişebilir
     const userRoles = (session.user as any)?.roles || [];
     console.log('🔍 Task Definitions API - User roles:', userRoles);
     const isManager = userRoles.some((r: any) => r?.name === 'Mağaza Müdürü');
+    const isSalesConsultant = userRoles.some((r: any) => r?.name === 'Satış Danışmanı');
+    const hasAccess = isManager || isSalesConsultant;
     console.log('🔍 Task Definitions API - Is manager:', isManager);
+    console.log('🔍 Task Definitions API - Is sales consultant:', isSalesConsultant);
+    console.log('🔍 Task Definitions API - Has access:', hasAccess);
     
-    if (!isManager) {
-      console.log('❌ Task Definitions API - Not a manager');
+    if (!hasAccess) {
+      console.log('❌ Task Definitions API - No access');
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
@@ -53,11 +57,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Rol kontrolü - sadece Mağaza Müdürü
+    // Rol kontrolü - Mağaza Müdürü ve Satış Danışmanı erişebilir
     const userRoles = (session.user as any)?.roles || [];
     const isManager = userRoles.some((r: any) => r?.name === 'Mağaza Müdürü');
+    const isSalesConsultant = userRoles.some((r: any) => r?.name === 'Satış Danışmanı');
+    const hasAccess = isManager || isSalesConsultant;
     
-    if (!isManager) {
+    if (!hasAccess) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

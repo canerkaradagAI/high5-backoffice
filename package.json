@@ -3,9 +3,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "setup": "tsx --require dotenv/config scripts/env-init.ts && npx prisma generate && npx prisma migrate deploy && tsx --require dotenv/config scripts/fix-params.ts",
+    "dev:ready": "npm run setup && npm run dev",
+    "fix:params": "tsx --require dotenv/config scripts/fix-params.ts",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/seed.ts"

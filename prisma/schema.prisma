@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -34,26 +34,26 @@ model Session {
 }
 
 model User {
-  id                  String     @id @default(cuid())
-  name                String?
-  email               String     @unique
-  password            String?
-  emailVerified       DateTime?
-  image               String?
-  phone               String?
-  firstName           String?
-  lastName            String?
-  isActive            Boolean    @default(true)
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  accounts            Account[]
-  consultingCustomers Customer[] @relation("ConsultantToCustomer")
-  sessions            Session[]
-  createdTasks        Task[]     @relation("CreatedByUser")
-  assignedTasks       Task[]     @relation("AssignedUser")
+  id                     String           @id @default(cuid())
+  name                   String?
+  email                  String           @unique
+  password               String?
+  emailVerified          DateTime?
+  image                  String?
+  phone                  String?
+  firstName              String?
+  lastName               String?
+  isActive               Boolean          @default(true)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  accounts               Account[]
+  consultingCustomers    Customer[]       @relation("ConsultantToCustomer")
+  receipts               Receipt[]
+  sessions               Session[]
+  createdTasks           Task[]           @relation("CreatedByUser")
+  assignedTasks          Task[]           @relation("AssignedUser")
   createdTaskDefinitions TaskDefinition[] @relation("CreatedTaskDefinitions")
-  userRoles           UserRole[]
-  receipts            Receipt[]
+  userRoles              UserRole[]
 }
 
 model VerificationToken {
@@ -146,47 +146,47 @@ model Customer {
   movedToPoolAt        DateTime?
   carts                Cart[]
   assignedConsultant   User?     @relation("ConsultantToCustomer", fields: [assignedConsultantId], references: [id])
+  receipts             Receipt[]
   sales                Sale[]
   tasks                Task[]
-  receipts             Receipt[]
 }
 
 model Task {
-  id           String    @id @default(cuid())
-  title        String
-  description  String?
-  type         String
-  priority     String    @default("Normal")
-  status       String    @default("Bekliyor")
-  dueDate      DateTime?
-  completedAt  DateTime?
-  notes        String?
+  id               String    @id @default(cuid())
+  title            String
+  description      String?
+  type             String
+  priority         String    @default("Normal")
+  status           String    @default("Bekliyor")
+  dueDate          DateTime?
+  completedAt      DateTime?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  assignedToId     String?
+  createdById      String
+  customerId       String?
   deliveryLocation String?
-  productCode  String?
-  targetRole   String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  assignedToId String?
-  createdById  String
-  customerId   String?
-  customer     Customer? @relation(fields: [customerId], references: [id])
-  createdBy    User      @relation("CreatedByUser", fields: [createdById], references: [id])
-  assignedTo   User?     @relation("AssignedUser", fields: [assignedToId], references: [id])
+  targetRole       String?
+  productCode      String?
+  customer         Customer? @relation(fields: [customerId], references: [id])
+  createdBy        User      @relation("CreatedByUser", fields: [createdById], references: [id])
+  assignedTo       User?     @relation("AssignedUser", fields: [assignedToId], references: [id])
 }
 
 model TaskDefinition {
-  id                String   @id @default(cuid())
-  name              String   // Görev adı (örn: "Müşteriye Ürün Getir")
-  description       String?  // Görev açıklaması
-  role              String   // Rol (Runner, Satış Danışmanı, Mağaza Müdürü)
-  requiresProductCode Boolean @default(false) // Ürün kodu gerektirir mi?
-  isActive          Boolean  @default(true)   // Aktif mi?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  createdById       String   // Oluşturan kullanıcı
-  createdBy         User     @relation("CreatedTaskDefinitions", fields: [createdById], references: [id])
-  
-  @@unique([name, role]) // Aynı rol için aynı isimde görev olamaz
+  id                  String   @id @default(cuid())
+  name                String
+  description         String?
+  role                String
+  requiresProductCode Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  createdById         String
+  createdBy           User     @relation("CreatedTaskDefinitions", fields: [createdById], references: [id])
+
+  @@unique([name, role])
 }
 
 model Sale {
@@ -227,8 +227,8 @@ model CartItem {
   createdAt   DateTime @default(now())
   description String?
   imageUrl    String?
-  product     Product? @relation(fields: [productId], references: [id])
   cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
 }
 
 model Product {
@@ -267,14 +267,14 @@ model Receipt {
   consultantId  String
   totalAmount   Float
   itemCount     Int
-  type          String        @default("REYON_RECEIPT") // REYON_RECEIPT, PAYMENT_RECEIPT
-  status        String        @default("CREATED") // CREATED, PAID, CANCELLED
+  type          String        @default("REYON_RECEIPT")
+  status        String        @default("CREATED")
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  customer      Customer      @relation(fields: [customerId], references: [id])
-  consultant    User          @relation(fields: [consultantId], references: [id])
-  items         ReceiptItem[]
   payments      Payment[]
+  consultant    User          @relation(fields: [consultantId], references: [id])
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  items         ReceiptItem[]
 }
 
 model ReceiptItem {
@@ -292,13 +292,13 @@ model ReceiptItem {
 }
 
 model Payment {
-  id          String   @id @default(cuid())
-  receiptId   String
-  amount      Float
-  method      String   // NFC, CREDIT_CARD, BANK_TRANSFER, CASH
-  status      String   @default("PENDING") // PENDING, COMPLETED, FAILED
-  reference   String?  // Ödeme referans numarası
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  receipt     Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  receiptId String
+  amount    Float
+  method    String
+  status    String   @default("PENDING")
+  reference String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  receipt   Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
 }

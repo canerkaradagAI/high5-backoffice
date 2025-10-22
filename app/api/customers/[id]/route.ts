@@ -190,9 +190,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check permissions
-    const userPermissions = session?.user?.permissions ?? [];
-    const hasPermission = userPermissions?.some(p => p?.name === 'Müşteri Yönetimi');
+    // Check permissions - Satış Danışmanı ve Mağaza Müdürü müşteri silebilir
+    const userRoles = (session.user as any)?.roles || [];
+    const isManager = userRoles.some((r: any) => r?.name === 'Mağaza Müdürü');
+    const isSalesConsultant = userRoles.some((r: any) => r?.name === 'Satış Danışmanı');
+    const hasPermission = isManager || isSalesConsultant;
     
     if (!hasPermission) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
