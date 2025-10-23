@@ -482,6 +482,7 @@ async function main() {
   console.log('🔄 Müşteri toplamları güncelleniyor...');
   
   for (const customer of allCustomers) {
+    // Tüm satışları say (doğru hesaplama için)
     const sales = await prisma.sale.findMany({
       where: { customerId: customer.id },
       select: { amount: true }
