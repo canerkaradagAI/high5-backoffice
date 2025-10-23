@@ -241,6 +241,90 @@ async function main() {
     }
   });
 
+  // Create sample products
+  const products = [
+    {
+      sku: '8683030770925',
+      name: 'GO WALK FLEX RAY',
+      description: 'Rahat yürüyüş ayakkabısı',
+      price: 899.99,
+      category: 'Ayakkabı',
+      brand: 'Skechers',
+      color: 'Siyah',
+      size: '9',
+      imageUrl: '/shoes/shoe.svg',
+      isActive: true
+    },
+    {
+      sku: '198739626223',
+      name: 'GO WALK 8 PATE',
+      description: 'Spor ayakkabı',
+      price: 799.99,
+      category: 'Ayakkabı',
+      brand: 'Skechers',
+      color: 'Mavi',
+      size: '8',
+      imageUrl: '/shoes/shoe.svg',
+      isActive: true
+    },
+    {
+      sku: '198739931709',
+      name: 'EQUALIZER 5.0 TRAIL',
+      description: 'Doğa yürüyüş ayakkabısı',
+      price: 999.99,
+      category: 'Ayakkabı',
+      brand: 'Skechers',
+      color: 'Kahverengi',
+      size: '10',
+      imageUrl: '/shoes/shoe.svg',
+      isActive: true
+    },
+    {
+      sku: '8683030780900',
+      name: 'GO WALK FLEX RAY',
+      description: 'Rahat yürüyüş ayakkabısı',
+      price: 899.99,
+      category: 'Ayakkabı',
+      brand: 'Skechers',
+      color: 'Gri',
+      size: '7',
+      imageUrl: '/shoes/shoe.svg',
+      isActive: true
+    },
+    {
+      sku: '198739626224',
+      name: 'GO WALK 8 PATE',
+      description: 'Spor ayakkabı',
+      price: 799.99,
+      category: 'Ayakkabı',
+      brand: 'Skechers',
+      color: 'Siyah',
+      size: '9',
+      imageUrl: '/shoes/shoe.svg',
+      isActive: true
+    },
+    {
+      sku: '198739931710',
+      name: 'EQUALIZER 5.0 TRAIL',
+      description: 'Doğa yürüyüş ayakkabısı',
+      price: 999.99,
+      category: 'Ayakkabı',
+      brand: 'Skechers',
+      color: 'Mavi',
+      size: '8',
+      imageUrl: '/shoes/shoe.svg',
+      isActive: true
+    }
+  ];
+
+  for (const product of products) {
+    await prisma.product.upsert({
+      where: { sku: product.sku },
+      update: {},
+      create: product
+    });
+  }
+
   // Create sample customers
   const customers = [
     {
@@ -345,7 +429,8 @@ async function main() {
     { key: 'MAX_CUSTOMER_PER_CONSULTANT', value: '50', type: 'NUMBER', description: 'Satış danışmanının bakabileceği maksimum müşteri sayısı', category: 'LIMITS' },
     { key: 'MAX_TASKS_PER_USER', value: '20', type: 'NUMBER', description: 'Kullanıcı başına maksimum görev sayısı', category: 'LIMITS' },
     { key: 'STORE_NAME', value: 'OLKA Premium Mağaza', type: 'STRING', description: 'Mağaza adı', category: 'SYSTEM' },
-    { key: 'AUTO_TASK_ASSIGNMENT', value: 'true', type: 'BOOLEAN', description: 'Otomatik görev ataması aktif', category: 'SYSTEM' }
+    { key: 'AUTO_TASK_ASSIGNMENT', value: 'true', type: 'BOOLEAN', description: 'Otomatik görev ataması aktif', category: 'SYSTEM' },
+    { key: 'CUSTOMER_DRAG_BEHAVIOR', value: 'pool', type: 'STRING', description: 'Müşteri sürükleme davranışı: pool (havuza al) veya transfer (transfer et)', category: 'CUSTOMER' }
   ];
 
   for (const parameter of parameters) {
@@ -356,11 +441,71 @@ async function main() {
     });
   }
 
+  // Add sales history to customers
+  console.log('🛍️ Müşterilere satış geçmişi ekleniyor...');
+  
+  const allCustomers = await prisma.customer.findMany({
+    select: { id: true, firstName: true, lastName: true }
+  });
+
+  const allProducts = await prisma.product.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, price: true, description: true, imageUrl: true }
+  });
+
+  for (const customer of allCustomers) {
+    const salesCount = Math.floor(Math.random() * 5) + 1; // 1-5 arası
+    
+    for (let i = 0; i < salesCount; i++) {
+      const randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)];
+      const randomDaysAgo = Math.floor(Math.random() * 180); // 0-180 gün önce
+      const invoiceDate = new Date();
+      invoiceDate.setDate(invoiceDate.getDate() - randomDaysAgo);
+      
+      const discount = Math.random() * 0.2; // 0-20% indirim
+      const finalPrice = randomProduct.price * (1 - discount);
+
+      await prisma.sale.create({
+        data: {
+          customerId: customer.id,
+          title: randomProduct.name,
+          description: randomProduct.description || 'Kaliteli ürün',
+          imageUrl: randomProduct.imageUrl,
+          invoiceDate: invoiceDate,
+          amount: Math.round(finalPrice * 100) / 100
+        }
+      });
+    }
+  }
+
+  // Update customer totals
+  console.log('🔄 Müşteri toplamları güncelleniyor...');
+  
+  for (const customer of allCustomers) {
+    const sales = await prisma.sale.findMany({
+      where: { customerId: customer.id },
+      select: { amount: true }
+    });
+
+    const totalSpent = sales.reduce((sum, sale) => sum + sale.amount, 0);
+    const totalOrders = sales.length;
+
+    await prisma.customer.update({
+      where: { id: customer.id },
+      data: {
+        totalSpent: totalSpent,
+        totalOrders: totalOrders,
+        averageOrderValue: totalOrders > 0 ? totalSpent / totalOrders : 0
+      }
+    });
+  }
+
   console.log('✅ Database seeded successfully!');
   console.log('📧 Test accounts created:');
   console.log('- Mağaza Müdürü: mudur@olka.com / 123456');
   console.log('- Satış Danışmanı: satis@olka.com / 123456');
   console.log('- Runner: runner@olka.com / 123456');
+  console.log(`🛍️ ${allCustomers.length} müşteriye satış geçmişi eklendi!`);
 }
 
 main()

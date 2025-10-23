@@ -14,7 +14,8 @@ import {
   Database,
   ShoppingCart,
   BarChart3,
-  Shield
+  Shield,
+  User
 } from 'lucide-react';
 import { ParametersList } from './parameters-list';
 import { AddParameterModal } from './add-parameter-modal';
@@ -38,7 +39,8 @@ const PARAMETER_CATEGORIES = [
   { value: 'SALES', label: 'Satış', icon: ShoppingCart, color: 'text-green-600 bg-green-50' },
   { value: 'LIMITS', label: 'Limitler', icon: Shield, color: 'text-orange-600 bg-orange-50' },
   { value: 'REPORTS', label: 'Raporlar', icon: BarChart3, color: 'text-purple-600 bg-purple-50' },
-  { value: 'DATABASE', label: 'Veritabanı', icon: Database, color: 'text-gray-600 bg-gray-50' }
+  { value: 'DATABASE', label: 'Veritabanı', icon: Database, color: 'text-gray-600 bg-gray-50' },
+  { value: 'CUSTOMER', label: 'Müşteri', icon: User, color: 'text-indigo-600 bg-indigo-50' }
 ];
 
 const PARAMETER_TYPES = [

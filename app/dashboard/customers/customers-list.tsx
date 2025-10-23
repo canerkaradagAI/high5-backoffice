@@ -80,20 +80,26 @@ export default function CustomersList({
   useEffect(() => {
     async function loadDragBehavior() {
       try {
-        const response = await fetch('/api/parameters/customer_drag_behavior');
+        const response = await fetch('/api/parameters?search=customer_drag_behavior');
         if (response.ok) {
-          const param = await response.json();
-          setDragBehavior(param.value as 'pool' | 'transfer');
-          console.log('🔧 Drag behavior loaded:', param.value);
+          const data = await response.json();
+          const dragBehaviorParam = data.parameters?.find((p: any) => p.key === 'CUSTOMER_DRAG_BEHAVIOR');
+          if (dragBehaviorParam) {
+            setDragBehavior(dragBehaviorParam.value as 'pool' | 'transfer');
+            console.log('🔧 Drag behavior loaded:', dragBehaviorParam.value);
+          } else {
+            console.log('🔧 Drag behavior parameter not found, using default: pool');
+            setDragBehavior('pool');
+          }
         } else {
           console.error('Failed to load drag behavior parameter:', response.status);
-          // Fallback: set to transfer for testing
-          setDragBehavior('transfer');
+          // Fallback: set to pool as default
+          setDragBehavior('pool');
         }
       } catch (error) {
         console.error('Error loading drag behavior parameter:', error);
-        // Fallback: set to transfer for testing
-        setDragBehavior('transfer');
+        // Fallback: set to pool as default
+        setDragBehavior('pool');
       }
     }
     loadDragBehavior();
@@ -358,11 +364,21 @@ export default function CustomersList({
         // Sağa swipe - Parametreye göre davranış
         if (dragBehavior === 'pool') {
           console.log('Triggering action: Havuza Al');
-          handleMoveToPool(draggedCustomer);
+          // Müşteri zaten havuzda ise işlem yapma
+          if (!draggedCustomer.assignedConsultantId) {
+            toast.error('Bu müşteri zaten havuzda');
+          } else {
+            handleMoveToPool(draggedCustomer);
+          }
         } else {
           console.log('Triggering action: Transfer Et');
-          setCustomerToTransfer(draggedCustomer);
-          setShowTransferModal(true);
+          // Müşteri zaten havuzda ise transfer yapma
+          if (!draggedCustomer.assignedConsultantId) {
+            toast.error('Bu müşteri zaten havuzda, transfer edilemez');
+          } else {
+            setCustomerToTransfer(draggedCustomer);
+            setShowTransferModal(true);
+          }
         }
       } else {
         // Sola swipe - Sil
