@@ -153,7 +153,7 @@ function NewTaskPageContent() {
       try {
         setLoadingUsers(true);
         const roleName = 'Runner'; // Sales Consultant sadece Runner'a görev atar; Manager seçime göre değişir
-        const res = await fetch(`/app/api/users/by-role?role=${encodeURIComponent(formData.assigneeRole === 'Satış Danışmanı' && !isSalesConsultant ? 'Satış Danışmanı' : roleName)}`);
+        const res = await fetch(`/api/users/by-role?role=${encodeURIComponent(formData.assigneeRole === 'Satış Danışmanı' && !isSalesConsultant ? 'Satış Danışmanı' : roleName)}`);
         if (res.ok) {
           const data = await res.json();
           setUsers(data.users || []);

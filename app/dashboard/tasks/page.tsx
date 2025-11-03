@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, Suspense } from 'react';
@@ -179,7 +178,7 @@ function TasksPageContent() {
       }
 
       if (view === 'consultant-pool') {
-        const res = await fetch('/app/api/tasks/consultant-pool');
+        const res = await fetch('/api/tasks/consultant-pool');
         if (res.ok) {
           const data = await res.json();
           const poolTasks: Task[] = data.tasks || [];
@@ -506,7 +505,6 @@ function TasksPageContent() {
     </div>
   );
 }
-
 export default function TasksPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
