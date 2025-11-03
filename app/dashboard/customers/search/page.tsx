@@ -39,10 +39,7 @@ export default function CustomerSearchPage() {
       if (mode === 'name') params.set('name', query);
       if (mode === 'email') params.set('email', query);
       if (mode === 'nationalId') params.set('nationalId', query);
-      let res = await fetch(`/api/customers/search?${params.toString()}`);
-      if (!res.ok) {
-        res = await fetch(`/app/api/customers/search?${params.toString()}`);
-      }
+      const res = await fetch(`/api/customers/search?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setResults(data || []);
@@ -74,11 +71,7 @@ export default function CustomerSearchPage() {
         body: JSON.stringify({ consultantId: userId })
       } as RequestInit;
 
-      let res = await fetch(`/api/customers/${id}/assign`, payload);
-      if (!res.ok) {
-        // Fallback: bazı ortamlarda rota /app/api altında olabilir
-        res = await fetch(`/app/api/customers/${id}/assign`, payload);
-      }
+      const res = await fetch(`/api/customers/${id}/assign`, payload);
 
       if (res.ok) {
         toast.success('Müşteri alındı');

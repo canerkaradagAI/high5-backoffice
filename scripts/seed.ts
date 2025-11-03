@@ -184,6 +184,20 @@ async function main() {
     }
   });
 
+  // Özge Aslan - Satış Danışmanı
+  const ozgeAslan = await prisma.user.upsert({
+    where: { email: 'ozge.aslan@high5.com' },
+    update: {},
+    create: {
+      email: 'ozge.aslan@high5.com',
+      password: hashedPassword,
+      firstName: 'Özge',
+      lastName: 'Aslan',
+      name: 'Özge Aslan',
+      phone: '+90 555 123 4567'
+    }
+  });
+
   // Assign roles to users
   await prisma.userRole.upsert({
     where: {
@@ -238,6 +252,20 @@ async function main() {
     create: {
       userId: runner.id,
       roleId: runnerRole.id
+    }
+  });
+
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: ozgeAslan.id,
+        roleId: salesConsultantRole.id
+      }
+    },
+    update: {},
+    create: {
+      userId: ozgeAslan.id,
+      roleId: salesConsultantRole.id
     }
   });
 
@@ -441,6 +469,100 @@ async function main() {
     });
   }
 
+  // Create task definitions
+  console.log('📋 Görev tanımları oluşturuluyor...');
+  
+  const taskDefinitions = [
+    // Runner görevleri
+    {
+      name: 'Müşteriye Ürün Getir',
+      description: 'Müşteriye belirtilen ürünü getirme görevi',
+      role: 'Runner',
+      requiresProductCode: true,
+      createdById: storeManager.id
+    },
+    {
+      name: 'Ürün Teslimatı',
+      description: 'Ürünü belirtilen yere teslim etme görevi',
+      role: 'Runner',
+      requiresProductCode: false,
+      createdById: storeManager.id
+    },
+    {
+      name: 'Stok Kontrolü',
+      description: 'Mağaza içi stok kontrolü yapma görevi',
+      role: 'Runner',
+      requiresProductCode: false,
+      createdById: storeManager.id
+    },
+    {
+      name: 'Ürün Hazırlama',
+      description: 'Müşteri için ürün hazırlama görevi',
+      role: 'Runner',
+      requiresProductCode: true,
+      createdById: storeManager.id
+    },
+    // Satış Danışmanı görevleri
+    {
+      name: 'Müşteri Görüşmesi',
+      description: 'Müşteri ile görüşme ve danışmanlık yapma',
+      role: 'Satış Danışmanı',
+      requiresProductCode: false,
+      createdById: storeManager.id
+    },
+    {
+      name: 'Sipariş Alma',
+      description: 'Müşteriden yeni sipariş alma görevi',
+      role: 'Satış Danışmanı',
+      requiresProductCode: false,
+      createdById: storeManager.id
+    },
+    {
+      name: 'Ürün Önerisi',
+      description: 'Müşteriye ürün önerisi yapma görevi',
+      role: 'Satış Danışmanı',
+      requiresProductCode: true,
+      createdById: storeManager.id
+    },
+    {
+      name: 'Müşteri Takibi',
+      description: 'Mevcut müşterileri takip etme görevi',
+      role: 'Satış Danışmanı',
+      requiresProductCode: false,
+      createdById: storeManager.id
+    },
+    // Mağaza Müdürü görevleri
+    {
+      name: 'Rapor İnceleme',
+      description: 'Satış ve performans raporlarını inceleme',
+      role: 'Mağaza Müdürü',
+      requiresProductCode: false,
+      createdById: storeManager.id
+    },
+    {
+      name: 'Görev Atama',
+      description: 'Yeni görevleri personellere atama',
+      role: 'Mağaza Müdürü',
+      requiresProductCode: false,
+      createdById: storeManager.id
+    }
+  ];
+
+  for (const taskDef of taskDefinitions) {
+    await prisma.taskDefinition.upsert({
+      where: {
+        name_role: {
+          name: taskDef.name,
+          role: taskDef.role
+        }
+      },
+      update: {},
+      create: taskDef
+    });
+  }
+
+  console.log(`✅ ${taskDefinitions.length} görev tanımı oluşturuldu`);
+
   // Add sales history to customers
   console.log('🛍️ Müşterilere satış geçmişi ekleniyor...');
   
@@ -505,6 +627,7 @@ async function main() {
   console.log('📧 Test accounts created:');
   console.log('- Mağaza Müdürü: mudur@olka.com / 123456');
   console.log('- Satış Danışmanı: satis@olka.com / 123456');
+  console.log('- Satış Danışmanı: ozge.aslan@high5.com / 123456');
   console.log('- Runner: runner@olka.com / 123456');
   console.log(`🛍️ ${allCustomers.length} müşteriye satış geçmişi eklendi!`);
 }

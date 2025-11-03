@@ -277,12 +277,8 @@ export default function CustomersList({
         body: JSON.stringify({ consultantId: (session?.user as any)?.id })
       };
 
-      // Önce app altındaki rota
-      let response = await fetch(`/app/api/customers/${customerId}/assign`, payload);
-      if (!response.ok) {
-        // Fallback: kök /api rota (ortamlara göre değişebilir)
-        response = await fetch(`/api/customers/${customerId}/assign`, payload);
-      }
+      // API rota
+      const response = await fetch(`/api/customers/${customerId}/assign`, payload);
 
       if (response.ok) {
         const updatedCustomers = customers.map(customer => 
@@ -449,11 +445,7 @@ export default function CustomersList({
       };
 
       // Önce app altındaki rota
-      let response = await fetch(`/app/api/customers/${customerToTransfer.id}/assign`, payload);
-      if (!response.ok) {
-        // Fallback: kök /api rota (ortamlara göre değişebilir)
-        response = await fetch(`/api/customers/${customerToTransfer.id}/assign`, payload);
-      }
+      const response = await fetch(`/api/customers/${customerToTransfer.id}/assign`, payload);
 
       if (response.ok) {
         // Danışman bilgisini al

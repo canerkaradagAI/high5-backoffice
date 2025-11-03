@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/db';
+import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +41,11 @@ export async function GET(request: NextRequest) {
       where: whereClause,
       include: {
         assignedConsultant: {
-          select: { id: true, firstName: true, lastName: true }
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -53,5 +57,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Müşteri arama sırasında hata oluştu' }, { status: 500 });
   }
 }
-
-

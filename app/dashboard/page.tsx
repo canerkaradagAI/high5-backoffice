@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../lib/auth';
+import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { prisma } from '../../lib/db';
+import { prisma } from '@/lib/db';
 import { Users, Search, UserPlus, ClipboardPlus, ListChecks, Inbox, Plus, ClipboardList, Settings, Shield, BarChart3, Package } from 'lucide-react';
 
 export default async function DashboardPage() {
